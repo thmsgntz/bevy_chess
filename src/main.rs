@@ -31,12 +31,12 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands
         // Camera
-        .spawn_bundle(PerspectiveCameraBundle{
+        .spawn_bundle(Camera3dBundle {
             transform: Transform::from_matrix(Mat4::from_rotation_translation(
-                  Quat::from_xyzw(-0.3, -0.5, -0.3, 0.5).normalize(),
-                  Vec3::new(-7.0, 20.0, 4.0))),
+                Quat::from_xyzw(-0.3, -0.5, -0.3, 0.5).normalize(),
+                Vec3::new(-7.0, 20.0, 4.0),
+            )),
             ..Default::default()
-
         })
         .insert_bundle(PickingCameraBundle::default())
         // Light

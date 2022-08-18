@@ -301,17 +301,9 @@ impl Plugin for BoardPlugin {
             .add_system(select_square.label("select_square"))
             .add_system(
                 // move_piece needs to run before select_piece
-                move_piece
-
-                    .after("select_square")
-                    .before("select_piece"),
+                move_piece.after("select_square").before("select_piece"),
             )
-            .add_system(
-                select_piece
-
-                    .after("select_square")
-                    .label("select_piece"),
-            )
+            .add_system(select_piece.after("select_square").label("select_piece"))
             .add_system(despawn_taken_pieces)
             .add_system(reset_selected.after("select_square"));
     }
