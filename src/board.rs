@@ -22,8 +22,8 @@ fn create_board(
     let mesh = meshes.add(Mesh::from(shape::Plane { size: 1. }));
 
     // Spawn 64 squares
-    for i in 0..8 {
-        for j in 0..8 {
+    for i in 0..11 {
+        for j in 0..11 {
             commands
                 .spawn_bundle(PbrBundle {
                     mesh: mesh.clone(),
