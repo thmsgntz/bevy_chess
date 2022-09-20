@@ -43,8 +43,13 @@ fn setup(mut commands: Commands) {
         .insert_bundle(PickingCameraBundle::default())
         // Light
         .commands()
-        .spawn_bundle(PointLightBundle {
-            transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
+        .spawn_bundle(DirectionalLightBundle {
+            transform: Transform {
+                translation: Vec3::new(4.0, 8.0, 4.0),
+                rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_4),
+                ..default()
+            },
+
             ..Default::default()
         });
 }
@@ -53,11 +58,9 @@ fn setup(mut commands: Commands) {
 fn keyboard_input_system(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
-    mut camera_query: Query<&mut Transform, (With<Camera>, Without<PointLight>)>,
-    mut light_query: Query<&mut Transform, With<PointLight>>,
+    mut camera_query: Query<&mut Transform, With<Camera>>,
 ) {
     let mut camera_transform = camera_query.single_mut();
-    let mut light_transform = light_query.single_mut();
 
     let mut velocity = Vec3::ZERO;
     let mut rotate = 0.0;
@@ -87,16 +90,18 @@ fn keyboard_input_system(
             Vec3::new(-7.0, 20.0, 4.0),
         ));
         *camera_transform = home.clone();
-        *light_transform = home.clone();
     } else {
         velocity = velocity.normalize_or_zero();
 
         camera_transform.translation += velocity * time.delta_seconds() * 10.0;
         camera_transform.rotate_y(rotate * time.delta_seconds());
 
-        // Nullify the Y factor
-        velocity *= Vec3::X + Vec3::Z;
-
-        light_transform.translation += velocity * time.delta_seconds() * 10.0;
+        // let x = camera_transform.translation[2].clamp(4.0, 7.5);
+        // camera_transform.translation[2] = x;
+        
+        // let y = camera_transform.translation[0].clamp(-7.0, -2.5);
+        // camera_transform.translation[0] = y;
+        
+        dbg!(camera_transform.translation);
     }
 }
