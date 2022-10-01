@@ -129,21 +129,13 @@ impl PlayerTurn {
             Players::Attacker => Players::Defender,
         }
     }
+}
 
-    fn is_mine(&self, piece_type: PieceType) -> bool {
-        if self.0 == Players::Defender {
-            match piece_type {
-                PieceType::Defender => true,
-                PieceType::King => true,
-                PieceType::Attacker => false,
-            }
-        } else {
-            match piece_type {
-                PieceType::Defender => false,
-                PieceType::King => false,
-                PieceType::Attacker => true,
-            }
-        }
+fn get_player_from_type(piece_type: PieceType) -> Players {
+    match piece_type {
+        PieceType::Defender => Players::Defender,
+        PieceType::King => Players::Defender,
+        PieceType::Attacker => Players::Attacker,
     }
 }
 
@@ -200,7 +192,10 @@ fn select_piece(
     if selected_piece.entity.is_none() {
         // Select the piece in the currently selected square
         for (piece_entity, piece) in pieces_query.iter() {
-            if piece.x == square.x && piece.y == square.y && turn.is_mine(piece.piece_type) {
+            if piece.x == square.x
+                && piece.y == square.y
+                && turn.0 == get_player_from_type(piece.piece_type)
+            {
                 // piece_entity is now the entity in the same square
                 selected_piece.entity = Some(piece_entity);
                 break;
@@ -235,10 +230,6 @@ fn move_piece(
 
     if let Some(selected_piece_entity) = selected_piece.entity {
         let pieces_vec = pieces_query.iter_mut().map(|(_, piece)| *piece).collect();
-        // let pieces_entity_vec = pieces_query
-        //     .iter_mut()
-        //     .map(|(entity, piece)| (entity, *piece))
-        //     .collect::<Vec<(Entity, Piece)>>();
         // Move the selected piece to the selected square
         let mut piece =
             if let Ok((_piece_entity, piece)) = pieces_query.get_mut(selected_piece_entity) {
@@ -273,14 +264,75 @@ fn reset_selected(
     }
 }
 
+fn get_neighbours(x: u8, y: u8) -> Vec<(u8, u8)> {
+    // Neighbours of 5,5 are:
+    // 4,5 6,5 5,4 5,6
+    // TODO For now ignore out of bound neighbours?
+
+    vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+}
+
+#[derive(Default)]
+struct MiniMap([[Option<PieceType>; 11]; 11]);
+
+impl std::fmt::Debug for MiniMap {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        // Draw the minimap, for debugging!
+
+        // Nice line on top
+        write!(fmt, "\n{}\n", "_".repeat(23))?;
+        
+        // Draw a char for each piece
+        // Iter in reverse because Bevy draws y=0 on the bottom
+        for line in self.0.iter().rev() {
+            write!(fmt, "|")?;
+
+            for piece in line {
+                let c = match piece {
+                    None => " ",
+                    Some(PieceType::King) => "K",
+                    Some(PieceType::Defender) => "D",
+                    Some(PieceType::Attacker) => "A",
+                };
+
+                // Seperator
+                write!(fmt, "{}|", c)?;
+            }
+            write!(fmt, "\n")?;
+        }
+        // Nice line on bottom
+        write!(fmt, "{}\n", "\u{AF}".repeat(23))
+    }
+}
+
+impl MiniMap {
+    fn set_piece(&mut self, piece: &Piece) {
+        self.0[piece.x as usize][piece.y as usize] = Some(piece.piece_type);
+    }
+}
+
+fn check_killing(mut commands: Commands, query: Query<(Entity, &Piece), Without<Taken>>) {
+    let mut map: MiniMap = Default::default();
+
+    // First build a minimap
+    //TODO: keep a minimap in stead of building every time
+    for (entity, piece) in query.iter() {
+        map.set_piece(piece);
+    }
+    // let neighbours = get_neighbours(piece.x, piece.y);
+
+    dbg!(map);
+}
+
 #[derive(Component)]
 struct Taken;
+
 fn despawn_taken_pieces(
     mut commands: Commands,
     mut app_exit_events: EventWriter<AppExit>,
-    query: Query<(Entity, &Piece, &Taken)>,
+    query: Query<(Entity, &Piece), With<Taken>>,
 ) {
-    for (entity, piece, _taken) in query.iter() {
+    for (entity, piece) in query.iter() {
         // If the king is taken, we should exit
         if piece.piece_type == PieceType::King {
             app_exit_events.send(AppExit);
@@ -307,6 +359,11 @@ impl Plugin for BoardPlugin {
                 move_piece.after("select_square").before("select_piece"),
             )
             .add_system(select_piece.after("select_square").label("select_piece"))
+            .add_system(
+                check_killing
+                    .after("select_piece")
+                    .before(despawn_taken_pieces),
+            )
             .add_system(despawn_taken_pieces)
             .add_system(reset_selected.after("select_square"));
     }
