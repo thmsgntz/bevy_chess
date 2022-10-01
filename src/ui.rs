@@ -1,4 +1,4 @@
-use crate::{board::*, pieces::*};
+use crate::board::*;
 use bevy::prelude::*;
 
 // Component to mark the Text entity
@@ -13,7 +13,7 @@ fn init_next_move_text(mut commands: Commands, asset_server: ResMut<AssetServer>
         // root node
         .spawn_bundle(
             TextBundle::from_section(
-                "Next move: White",
+                "Next move: Defender",
                 TextStyle {
                     font: font.clone(),
                     font_size: 40.0,
@@ -43,8 +43,8 @@ fn next_move_text_update(turn: Res<PlayerTurn>, mut query: Query<&mut Text, With
         text.sections[0].value = format!(
             "Next move: {}",
             match turn.0 {
-                PieceColor::White => "White",
-                PieceColor::Black => "Black",
+                Players::Defender => "Defender",
+                Players::Attacker => "Attacker",
             }
         );
     }

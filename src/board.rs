@@ -2,6 +2,12 @@ use crate::pieces::*;
 use bevy::{app::AppExit, prelude::*};
 use bevy_mod_picking::*;
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum Players {
+    Attacker,
+    Defender,
+}
+
 #[derive(Component)]
 pub struct Square {
     pub x: u8,
@@ -110,17 +116,33 @@ struct SelectedPiece {
 }
 
 #[derive(Component)]
-pub struct PlayerTurn(pub PieceColor);
+pub struct PlayerTurn(pub Players);
 impl Default for PlayerTurn {
     fn default() -> Self {
-        Self(PieceColor::White)
+        Self(Players::Defender)
     }
 }
 impl PlayerTurn {
     fn change(&mut self) {
         self.0 = match self.0 {
-            PieceColor::White => PieceColor::Black,
-            PieceColor::Black => PieceColor::White,
+            Players::Defender => Players::Attacker,
+            Players::Attacker => Players::Defender,
+        }
+    }
+
+    fn is_mine(&self, piece_type: PieceType) -> bool {
+        if self.0 == Players::Defender {
+            match piece_type {
+                PieceType::Defender => true,
+                PieceType::King => true,
+                PieceType::Attacker => false,
+            }
+        } else {
+            match piece_type {
+                PieceType::Defender => false,
+                PieceType::King => false,
+                PieceType::Attacker => true,
+            }
         }
     }
 }
@@ -178,7 +200,7 @@ fn select_piece(
     if selected_piece.entity.is_none() {
         // Select the piece in the currently selected square
         for (piece_entity, piece) in pieces_query.iter() {
-            if piece.x == square.x && piece.y == square.y && piece.color == turn.0 {
+            if piece.x == square.x && piece.y == square.y && turn.is_mine(piece.piece_type) {
                 // piece_entity is now the entity in the same square
                 selected_piece.entity = Some(piece_entity);
                 break;
@@ -188,7 +210,6 @@ fn select_piece(
 }
 
 fn move_piece(
-    mut commands: Commands,
     selected_square: Res<SelectedSquare>,
     selected_piece: Res<SelectedPiece>,
     mut turn: ResMut<PlayerTurn>,
@@ -214,10 +235,10 @@ fn move_piece(
 
     if let Some(selected_piece_entity) = selected_piece.entity {
         let pieces_vec = pieces_query.iter_mut().map(|(_, piece)| *piece).collect();
-        let pieces_entity_vec = pieces_query
-            .iter_mut()
-            .map(|(entity, piece)| (entity, *piece))
-            .collect::<Vec<(Entity, Piece)>>();
+        // let pieces_entity_vec = pieces_query
+        //     .iter_mut()
+        //     .map(|(entity, piece)| (entity, *piece))
+        //     .collect::<Vec<(Entity, Piece)>>();
         // Move the selected piece to the selected square
         let mut piece =
             if let Ok((_piece_entity, piece)) = pieces_query.get_mut(selected_piece_entity) {
@@ -227,17 +248,6 @@ fn move_piece(
             };
 
         if piece.is_move_valid((square.x, square.y), pieces_vec) {
-            // Check if a piece of the opposite color exists in this square and despawn it
-            for (other_entity, other_piece) in pieces_entity_vec {
-                if other_piece.x == square.x
-                    && other_piece.y == square.y
-                    && other_piece.color != piece.color
-                {
-                    // Mark the piece as taken
-                    commands.entity(other_entity).insert(Taken);
-                }
-            }
-
             // Move piece
             piece.x = square.x;
             piece.y = square.y;
@@ -273,13 +283,6 @@ fn despawn_taken_pieces(
     for (entity, piece, _taken) in query.iter() {
         // If the king is taken, we should exit
         if piece.piece_type == PieceType::King {
-            println!(
-                "{} won! Thanks for playing!",
-                match piece.color {
-                    PieceColor::White => "Black",
-                    PieceColor::Black => "White",
-                }
-            );
             app_exit_events.send(AppExit);
         }
 

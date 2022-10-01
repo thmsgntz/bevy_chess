@@ -98,10 +98,10 @@ fn keyboard_input_system(
 
         // let x = camera_transform.translation[2].clamp(4.0, 7.5);
         // camera_transform.translation[2] = x;
-        
+
         // let y = camera_transform.translation[0].clamp(-7.0, -2.5);
         // camera_transform.translation[0] = y;
-        
+
         dbg!(camera_transform.translation);
     }
 }
