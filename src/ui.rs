@@ -1,4 +1,5 @@
 use crate::board::*;
+use crate::pieces::*;
 use bevy::prelude::*;
 
 // Component to mark the Text entity
@@ -43,8 +44,8 @@ fn next_move_text_update(turn: Res<PlayerTurn>, mut query: Query<&mut Text, With
         text.sections[0].value = format!(
             "Next move: {}",
             match turn.0 {
-                Players::Defender => "Defender",
-                Players::Attacker => "Attacker",
+                Player::Defender => "Defender",
+                Player::Attacker => "Attacker",
             }
         );
     }

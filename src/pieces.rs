@@ -1,30 +1,31 @@
+use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub enum PieceType {
-    King,
+pub enum Player {
     Defender,
     Attacker,
 }
 
 #[derive(Clone, Copy, Component)]
 pub struct Piece {
-    pub piece_type: PieceType,
+    pub player: Player,
     // Current position
-    pub x: u8,
-    pub y: u8,
+    pub x: i8,
+    pub y: i8,
+    pub is_king: bool,
 }
 impl Piece {
     /// Returns the possible_positions that are available
-    pub fn is_move_valid(&self, new_position: (u8, u8), pieces: Vec<Piece>) -> bool {
+    pub fn is_move_valid(&self, new_position: (i8, i8), pieces: Vec<Piece>) -> bool {
         is_path_empty((self.x, self.y), new_position, &pieces)
             && ((self.x == new_position.0 && self.y != new_position.1)
                 || (self.y == new_position.1 && self.x != new_position.0))
-            && (self.piece_type == PieceType::King || new_position != (5, 5))
+            && (self.is_king || new_position != (5, 5))
     }
 }
 
-fn is_path_empty(begin: (u8, u8), end: (u8, u8), pieces: &Vec<Piece>) -> bool {
+fn is_path_empty(begin: (i8, i8), end: (i8, i8), pieces: &Vec<Piece>) -> bool {
     // Same column
     if begin.0 == end.0 {
         for piece in pieces {
@@ -51,7 +52,30 @@ fn is_path_empty(begin: (u8, u8), end: (u8, u8), pieces: &Vec<Piece>) -> bool {
     true
 }
 
-fn move_pieces(time: Res<Time>, mut query: Query<(&mut Transform, &Piece)>) {
+#[derive(Default)]
+pub struct Moving(pub bool);
+
+pub fn is_moving(moving: Res<Moving>) -> ShouldRun {
+    if moving.0 {
+        ShouldRun::No
+    } else {
+        ShouldRun::Yes
+    }
+}
+
+#[derive(Default)]
+pub struct LastDestination {
+    pub x: i8,
+    pub y: i8,
+}
+
+fn move_pieces(
+    time: Res<Time>,
+    mut moving: ResMut<Moving>,
+    mut last_dest: ResMut<LastDestination>,
+    mut query: Query<(&mut Transform, &Piece)>,
+) {
+    moving.0 = false;
     for (mut transform, piece) in query.iter_mut() {
         // Get the direction to move in
         let direction = Vec3::new(piece.x as f32, 0., piece.y as f32) - transform.translation;
@@ -59,6 +83,9 @@ fn move_pieces(time: Res<Time>, mut query: Query<(&mut Transform, &Piece)>) {
         // Only move if the piece isn't already there (distance is big)
         if direction.length() > 0.1 {
             transform.translation += direction.normalize() * time.delta_seconds();
+            moving.0 = true;
+            last_dest.x = piece.x;
+            last_dest.y = piece.y;
         }
     }
 }
@@ -174,7 +201,7 @@ fn spawn_king(
     material: Handle<StandardMaterial>,
     mesh: Handle<Mesh>,
     mesh_cross: Handle<Mesh>,
-    position: (u8, u8),
+    position: (i8, i8),
 ) {
     commands
         // Spawn parent entity
@@ -187,9 +214,10 @@ fn spawn_king(
             ..Default::default()
         })
         .insert(Piece {
-            piece_type: PieceType::King,
+            player: Player::Defender,
             x: position.0,
             y: position.1,
+            is_king: true,
         })
         // Add children to the parent
         .with_children(|parent| {
@@ -220,26 +248,26 @@ fn spawn_attacker(
     commands: &mut Commands,
     material: Handle<StandardMaterial>,
     mesh: Handle<Mesh>,
-    position: (u8, u8),
+    position: (i8, i8),
 ) {
-    spawn_pawn(commands, material, PieceType::Attacker, mesh, position);
+    spawn_pawn(commands, material, Player::Attacker, mesh, position);
 }
 
 fn spawn_defender(
     commands: &mut Commands,
     material: Handle<StandardMaterial>,
     mesh: Handle<Mesh>,
-    position: (u8, u8),
+    position: (i8, i8),
 ) {
-    spawn_pawn(commands, material, PieceType::Defender, mesh, position);
+    spawn_pawn(commands, material, Player::Defender, mesh, position);
 }
 
 fn spawn_pawn(
     commands: &mut Commands,
     material: Handle<StandardMaterial>,
-    piece_type: PieceType,
+    player: Player,
     mesh: Handle<Mesh>,
-    position: (u8, u8),
+    position: (i8, i8),
 ) {
     commands
         // Spawn parent entity
@@ -252,9 +280,10 @@ fn spawn_pawn(
             ..Default::default()
         })
         .insert(Piece {
-            piece_type: piece_type,
+            player,
             x: position.0,
             y: position.1,
+            is_king: false,
         })
         .with_children(|parent| {
             parent.spawn_bundle(PbrBundle {
@@ -274,6 +303,8 @@ pub struct PiecesPlugin;
 impl Plugin for PiecesPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(create_pieces)
+            .init_resource::<Moving>()
+            .init_resource::<LastDestination>()
             .add_system(move_pieces);
         //.insert_resource
     }
