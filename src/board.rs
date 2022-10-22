@@ -1,3 +1,4 @@
+use crate::minimap::*;
 use crate::pieces::*;
 use bevy::{app::AppExit, prelude::*};
 use bevy_mod_picking::*;
@@ -188,9 +189,16 @@ fn select_piece(
     }
 }
 
+#[derive(Default, Debug)]
+struct LastDestination {
+    x: i8,
+    y: i8,
+}
+
 fn move_piece(
     selected_square: Res<SelectedSquare>,
     selected_piece: Res<SelectedPiece>,
+    mut last_dest: ResMut<LastDestination>,
     mut turn: ResMut<PlayerTurn>,
     squares_query: Query<&Square>,
     mut pieces_query: Query<(Entity, &mut Piece)>,
@@ -227,6 +235,9 @@ fn move_piece(
             piece.x = square.x;
             piece.y = square.y;
 
+            last_dest.x = piece.x;
+            last_dest.y = piece.y;
+
             // Change turn
             turn.change();
         }
@@ -245,117 +256,6 @@ fn reset_selected(
     for _event in event_reader.iter() {
         selected_square.entity = None;
         selected_piece.entity = None;
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Default)]
-enum PieceType {
-    Defender,
-    Attacker,
-    King,
-    #[default]
-    None,
-}
-
-impl PieceType {
-    fn is_enemy(&self, other: PieceType) -> bool {
-        match self {
-            PieceType::None => false,
-            PieceType::Attacker => match other {
-                PieceType::Defender | PieceType::King => true,
-                _ => false,
-            },
-            PieceType::Defender | PieceType::King => match other {
-                PieceType::Attacker => true,
-                _ => false,
-            },
-        }
-    }
-}
-
-impl Piece {
-    fn to_piecetype(&self) -> PieceType {
-        if self.is_king {
-            PieceType::King
-        } else if self.player == Player::Defender {
-            PieceType::Defender
-        } else {
-            PieceType::Attacker
-        }
-    }
-}
-
-#[derive(Default)]
-struct MiniMap([[PieceType; 11]; 11]);
-
-impl std::fmt::Debug for MiniMap {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        // Draw the minimap, for debugging!
-
-        // Nice line on top
-        write!(fmt, "\n{}\n", "_".repeat(23))?;
-
-        // Draw a char for each piece
-        // Iter in reverse because Bevy draws y=0 on the bottom
-        for line in self.0.iter().rev() {
-            write!(fmt, "|")?;
-
-            for piece in line {
-                let c = match piece {
-                    PieceType::None => " ",
-                    PieceType::King => "K",
-                    PieceType::Defender => "D",
-                    PieceType::Attacker => "A",
-                };
-
-                // Seperator
-                write!(fmt, "{}|", c)?;
-            }
-            write!(fmt, "\n")?;
-        }
-        // Nice line on bottom
-        write!(fmt, "{}\n", "\u{AF}".repeat(23))
-    }
-}
-
-impl MiniMap {
-    fn set_piece(&mut self, piece: &Piece) {
-        if piece.is_king {}
-        self.0[piece.x as usize][piece.y as usize] = piece.to_piecetype();
-    }
-
-    fn get_piece(&self, loc: (i8, i8)) -> PieceType {
-        if loc.0 < 0 || loc.0 > 10 || loc.1 < 0 || loc.1 > 10 {
-            PieceType::None
-        } else {
-            self.0[loc.0 as usize][loc.1 as usize]
-        }
-    }
-
-    fn detect_killings(&self) -> Vec<(i8, i8)> {
-        // Check all the easy pieces
-
-        let mut retval = vec![];
-
-        for x in 0..11 {
-            for y in 0..11 {
-                let loc = self.get_piece((x, y));
-
-                let up = self.get_piece((x, y - 1));
-                let down = self.get_piece((x, y + 1));
-
-                let left = self.get_piece((x - 1, y));
-                let right = self.get_piece((x + 1, y));
-
-                if (up.is_enemy(loc) && down.is_enemy(loc))
-                    || (left.is_enemy(loc) && right.is_enemy(loc))
-                {
-                    retval.push((x, y));
-                }
-            }
-        }
-
-        retval
     }
 }
 
@@ -380,10 +280,12 @@ fn check_killing(
     // Then iter each piece, and see if it is killed
     for kill in &killings {
         if kill.0 == last_dest.x && kill.1 == last_dest.y {
+            print!("Not killing piece {:?}\n", kill);
             continue;
         }
         for (entity, piece) in query.iter() {
             if kill.0 == piece.x && kill.1 == piece.y {
+                print!("Killing {:?}, not {:?}\n", kill, last_dest);
                 commands.entity(entity).insert(Taken);
             }
         }
@@ -420,6 +322,7 @@ impl Plugin for BoardPlugin {
             .init_resource::<SelectedPiece>()
             .init_resource::<SquareMaterials>()
             .init_resource::<PlayerTurn>()
+            .init_resource::<LastDestination>()
             .add_event::<ResetSelectedEvent>()
             .add_startup_system(create_board)
             .add_system_set(

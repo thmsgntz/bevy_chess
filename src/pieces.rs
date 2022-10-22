@@ -1,6 +1,43 @@
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 
+#[derive(Clone, Copy, PartialEq, Default)]
+pub enum PieceType {
+    Defender,
+    Attacker,
+    King,
+    #[default]
+    None,
+}
+
+impl PieceType {
+    pub fn is_enemy(&self, other: PieceType) -> bool {
+        match self {
+            PieceType::None => false,
+            PieceType::Attacker => match other {
+                PieceType::Defender | PieceType::King => true,
+                _ => false,
+            },
+            PieceType::Defender | PieceType::King => match other {
+                PieceType::Attacker => true,
+                _ => false,
+            },
+        }
+    }
+}
+
+impl Piece {
+    pub fn to_piecetype(&self) -> PieceType {
+        if self.is_king {
+            PieceType::King
+        } else if self.player == Player::Defender {
+            PieceType::Defender
+        } else {
+            PieceType::Attacker
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Player {
     Defender,
@@ -63,16 +100,9 @@ pub fn is_moving(moving: Res<Moving>) -> ShouldRun {
     }
 }
 
-#[derive(Default)]
-pub struct LastDestination {
-    pub x: i8,
-    pub y: i8,
-}
-
 fn move_pieces(
     time: Res<Time>,
     mut moving: ResMut<Moving>,
-    mut last_dest: ResMut<LastDestination>,
     mut query: Query<(&mut Transform, &Piece)>,
 ) {
     moving.0 = false;
@@ -84,8 +114,6 @@ fn move_pieces(
         if direction.length() > 0.1 {
             transform.translation += direction.normalize() * time.delta_seconds();
             moving.0 = true;
-            last_dest.x = piece.x;
-            last_dest.y = piece.y;
         }
     }
 }
@@ -102,16 +130,6 @@ fn create_pieces(
         asset_server.load("models/chess_kit/pieces.glb#Mesh1/Primitive0");
     let pawn_handle: Handle<Mesh> =
         asset_server.load("models/chess_kit/pieces.glb#Mesh2/Primitive0");
-    // let knight_1_handle: Handle<Mesh> =
-    //     asset_server.load("models/chess_kit/pieces.glb#Mesh3/Primitive0");
-    // let knight_2_handle: Handle<Mesh> =
-    //     asset_server.load("models/chess_kit/pieces.glb#Mesh4/Primitive0");
-    // let rook_handle: Handle<Mesh> =
-    //     asset_server.load("models/chess_kit/pieces.glb#Mesh5/Primitive0");
-    // let bishop_handle: Handle<Mesh> =
-    //     asset_server.load("models/chess_kit/pieces.glb#Mesh6/Primitive0");
-    // let queen_handle: Handle<Mesh> =
-    //     asset_server.load("models/chess_kit/pieces.glb#Mesh7/Primitive0");
 
     // Add some materials
     let white_material = materials.add(Color::rgb(1., 0.8, 0.8).into());
@@ -304,8 +322,6 @@ impl Plugin for PiecesPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(create_pieces)
             .init_resource::<Moving>()
-            .init_resource::<LastDestination>()
             .add_system(move_pieces);
-        //.insert_resource
     }
 }

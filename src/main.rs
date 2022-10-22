@@ -7,6 +7,8 @@ mod board;
 use board::*;
 mod ui;
 use ui::*;
+mod minimap;
+use minimap::*;
 
 fn main() {
     App::new()
@@ -102,6 +104,6 @@ fn keyboard_input_system(
         // let y = camera_transform.translation[0].clamp(-7.0, -2.5);
         // camera_transform.translation[0] = y;
 
-        dbg!(camera_transform.translation);
+        // dbg!(camera_transform.translation);
     }
 }
