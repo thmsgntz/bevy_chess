@@ -44,7 +44,7 @@ pub enum Player {
     Attacker,
 }
 
-#[derive(Clone, Copy, Component)]
+#[derive(Clone, Copy, Component, Debug)]
 pub struct Piece {
     pub player: Player,
     // Current position
@@ -101,18 +101,23 @@ pub fn is_moving(moving: Res<Moving>) -> ShouldRun {
 }
 
 fn move_pieces(
-    time: Res<Time>,
+    time_opt: Option<Res<Time>>,
     mut moving: ResMut<Moving>,
     mut query: Query<(&mut Transform, &Piece)>,
 ) {
     moving.0 = false;
+
     for (mut transform, piece) in query.iter_mut() {
         // Get the direction to move in
         let direction = Vec3::new(piece.x as f32, 0., piece.y as f32) - transform.translation;
 
         // Only move if the piece isn't already there (distance is big)
         if direction.length() > 0.1 {
-            transform.translation += direction.normalize() * time.delta_seconds();
+            if let Some(time) = &time_opt {
+                transform.translation += direction.normalize() * time.delta_seconds();
+            } else {
+                transform.translation += direction.normalize() * 0.001;
+            }
             moving.0 = true;
         }
     }
@@ -120,20 +125,51 @@ fn move_pieces(
 
 fn create_pieces(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Option<Res<AssetServer>>,
+    mut materials: Option<ResMut<Assets<StandardMaterial>>>,
 ) {
-    // Load all the meshes
-    let king_handle: Handle<Mesh> =
-        asset_server.load("models/chess_kit/pieces.glb#Mesh0/Primitive0");
-    let king_cross_handle: Handle<Mesh> =
-        asset_server.load("models/chess_kit/pieces.glb#Mesh1/Primitive0");
-    let pawn_handle: Handle<Mesh> =
-        asset_server.load("models/chess_kit/pieces.glb#Mesh2/Primitive0");
+    let mut king_handle: Option<Handle<Mesh>> = None;
+    let mut king_cross_handle: Option<Handle<Mesh>> = None;
+    let mut pawn_handle: Option<Handle<Mesh>> = None;
 
-    // Add some materials
-    let white_material = materials.add(Color::rgb(1., 0.8, 0.8).into());
-    let black_material = materials.add(Color::rgb(0.3, 0.3, 0.3).into());
+    let mut white_material = None;
+    let mut black_material = None;
+
+    if !cfg!(test) {
+        // Load all the meshes
+        king_handle = Some(
+            asset_server
+                .as_ref()
+                .unwrap()
+                .load("models/chess_kit/pieces.glb#Mesh0/Primitive0"),
+        );
+        king_cross_handle = Some(
+            asset_server
+                .as_ref()
+                .unwrap()
+                .load("models/chess_kit/pieces.glb#Mesh1/Primitive0"),
+        );
+        pawn_handle = Some(
+            asset_server
+                .as_ref()
+                .unwrap()
+                .load("models/chess_kit/pieces.glb#Mesh2/Primitive0"),
+        );
+
+        // Add some materials
+        white_material = Some(
+            materials
+                .as_mut()
+                .unwrap()
+                .add(Color::rgb(1., 0.8, 0.8).into()),
+        );
+        black_material = Some(
+            materials
+                .as_mut()
+                .unwrap()
+                .add(Color::rgb(0.3, 0.3, 0.3).into()),
+        );
+    }
 
     spawn_king(
         &mut commands,
@@ -216,12 +252,12 @@ fn create_pieces(
 
 fn spawn_king(
     commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    mesh: Handle<Mesh>,
-    mesh_cross: Handle<Mesh>,
+    material: Option<Handle<StandardMaterial>>,
+    mesh: Option<Handle<Mesh>>,
+    mesh_cross: Option<Handle<Mesh>>,
     position: (i8, i8),
 ) {
-    commands
+    let mut bindings = commands
         // Spawn parent entity
         .spawn_bundle(PbrBundle {
             transform: Transform::from_translation(Vec3::new(
@@ -230,18 +266,19 @@ fn spawn_king(
                 position.1 as f32,
             )),
             ..Default::default()
-        })
-        .insert(Piece {
-            player: Player::Defender,
-            x: position.0,
-            y: position.1,
-            is_king: true,
-        })
+        });
+    bindings.insert(Piece {
+        player: Player::Defender,
+        x: position.0,
+        y: position.1,
+        is_king: true,
+    });
+    if !cfg!(test) {
         // Add children to the parent
-        .with_children(|parent| {
+        bindings.with_children(|parent| {
             parent.spawn_bundle(PbrBundle {
-                mesh,
-                material: material.clone(),
+                mesh: mesh.unwrap(),
+                material: material.as_ref().unwrap().clone(),
                 transform: {
                     let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., -1.9));
                     transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
@@ -250,8 +287,8 @@ fn spawn_king(
                 ..Default::default()
             });
             parent.spawn_bundle(PbrBundle {
-                mesh: mesh_cross,
-                material,
+                mesh: mesh_cross.unwrap(),
+                material: material.unwrap(),
                 transform: {
                     let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., -1.9));
                     transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
@@ -260,12 +297,13 @@ fn spawn_king(
                 ..Default::default()
             });
         });
+    }
 }
 
 fn spawn_attacker(
     commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    mesh: Handle<Mesh>,
+    material: Option<Handle<StandardMaterial>>,
+    mesh: Option<Handle<Mesh>>,
     position: (i8, i8),
 ) {
     spawn_pawn(commands, material, Player::Attacker, mesh, position);
@@ -273,8 +311,8 @@ fn spawn_attacker(
 
 fn spawn_defender(
     commands: &mut Commands,
-    material: Handle<StandardMaterial>,
-    mesh: Handle<Mesh>,
+    material: Option<Handle<StandardMaterial>>,
+    mesh: Option<Handle<Mesh>>,
     position: (i8, i8),
 ) {
     spawn_pawn(commands, material, Player::Defender, mesh, position);
@@ -282,12 +320,12 @@ fn spawn_defender(
 
 fn spawn_pawn(
     commands: &mut Commands,
-    material: Handle<StandardMaterial>,
+    material: Option<Handle<StandardMaterial>>,
     player: Player,
-    mesh: Handle<Mesh>,
+    mesh: Option<Handle<Mesh>>,
     position: (i8, i8),
 ) {
-    commands
+    let mut binding = commands
         // Spawn parent entity
         .spawn_bundle(PbrBundle {
             transform: Transform::from_translation(Vec3::new(
@@ -296,17 +334,19 @@ fn spawn_pawn(
                 position.1 as f32,
             )),
             ..Default::default()
-        })
-        .insert(Piece {
-            player,
-            x: position.0,
-            y: position.1,
-            is_king: false,
-        })
-        .with_children(|parent| {
+        });
+
+    binding.insert(Piece {
+        player,
+        x: position.0,
+        y: position.1,
+        is_king: false,
+    });
+    if !cfg!(test) {
+        binding.with_children(|parent| {
             parent.spawn_bundle(PbrBundle {
-                mesh,
-                material,
+                mesh: mesh.unwrap(),
+                material: material.unwrap(),
                 transform: {
                     let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., 2.6));
                     transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
@@ -315,6 +355,7 @@ fn spawn_pawn(
                 ..Default::default()
             });
         });
+    }
 }
 
 pub struct PiecesPlugin;

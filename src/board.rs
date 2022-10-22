@@ -16,36 +16,43 @@ impl Square {
 
 fn create_board(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    materials: Res<SquareMaterials>,
+    meshes: Option<ResMut<Assets<Mesh>>>,
+    materials: Option<Res<SquareMaterials>>,
 ) {
     // Add meshes
-    let mesh = meshes.add(Mesh::from(shape::Plane { size: 1. }));
+    let mesh = if let Some(mut m) = meshes {
+        Some(m.add(Mesh::from(shape::Plane { size: 1. })))
+    } else {
+        None
+    };
 
     // Spawn 64 squares
     for i in 0..11 {
         for j in 0..11 {
-            commands
-                .spawn_bundle(PbrBundle {
-                    mesh: mesh.clone(),
-                    // Change material according to position to get alternating pattern
-                    material: if (i + j + 1) % 2 == 0 {
-                        materials.white_color.clone()
-                    } else {
-                        materials.black_color.clone()
-                    },
-                    transform: Transform::from_translation(Vec3::new(i as f32, 0., j as f32)),
-                    ..Default::default()
-                })
-                .insert_bundle(PickableBundle {
-                    // pickable_button: PickableButton {
-                    //     initial: Some(initial_mat.clone()),
-                    //     hovered: Some(materials.highlight_color.clone()),
-                    //     pressed: None,
-                    //     selected: Some(materials.selected_color.clone())},
-                    ..Default::default()
-                })
-                .insert(Square { x: i, y: j });
+            if cfg!(test) {
+                commands
+                    .spawn_bundle(PickableBundle {
+                        ..Default::default()
+                    })
+                    .insert(Square { x: i, y: j });
+            } else {
+                commands
+                    .spawn_bundle(PbrBundle {
+                        mesh: mesh.as_ref().unwrap().clone(),
+                        // Change material according to position to get alternating pattern
+                        material: if (i + j + 1) % 2 == 0 {
+                            materials.as_ref().unwrap().white_color.clone()
+                        } else {
+                            materials.as_ref().unwrap().black_color.clone()
+                        },
+                        transform: Transform::from_translation(Vec3::new(i as f32, 0., j as f32)),
+                        ..Default::default()
+                    })
+                    .insert_bundle(PickableBundle {
+                        ..Default::default()
+                    })
+                    .insert(Square { x: i, y: j });
+            }
         }
     }
 }
@@ -190,9 +197,9 @@ fn select_piece(
 }
 
 #[derive(Default, Debug)]
-struct LastDestination {
-    x: i8,
-    y: i8,
+pub struct LastDestination {
+    pub x: i8,
+    pub y: i8,
 }
 
 fn move_piece(
@@ -293,7 +300,7 @@ fn check_killing(
 }
 
 #[derive(Component)]
-struct Taken;
+pub struct Taken;
 
 fn despawn_taken_pieces(
     mut commands: Commands,
@@ -320,29 +327,30 @@ impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SelectedSquare>()
             .init_resource::<SelectedPiece>()
-            .init_resource::<SquareMaterials>()
             .init_resource::<PlayerTurn>()
             .init_resource::<LastDestination>()
             .add_event::<ResetSelectedEvent>()
-            .add_startup_system(create_board)
-            .add_system_set(
+            .add_startup_system(create_board);
+        if !cfg!(test) {
+            app.init_resource::<SquareMaterials>().add_system_set(
                 SystemSet::new()
                     .with_run_criteria(is_moving)
                     .label("select_square")
                     .with_system(color_squares)
                     .with_system(select_square),
-            )
-            .add_system(
-                // move_piece needs to run before select_piece
-                move_piece.after("select_square").before("select_piece"),
-            )
-            .add_system(select_piece.after("select_square").label("select_piece"))
-            .add_system(
-                check_killing
-                    .after("select_piece")
-                    .before(despawn_taken_pieces),
-            )
-            .add_system(despawn_taken_pieces)
-            .add_system(reset_selected.after("select_square"));
+            );
+        }
+        app.add_system(
+            // move_piece needs to run before select_piece
+            move_piece.after("select_square").before("select_piece"),
+        )
+        .add_system(select_piece.after("select_square").label("select_piece"))
+        .add_system(
+            check_killing
+                .after("select_piece")
+                .before(despawn_taken_pieces),
+        )
+        .add_system(despawn_taken_pieces)
+        .add_system(reset_selected.after("select_square"));
     }
 }
