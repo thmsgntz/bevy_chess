@@ -28,13 +28,14 @@ impl std::fmt::Debug for MiniMap {
                     PieceType::King => "K",
                     PieceType::Defender => "D",
                     PieceType::Attacker => "A",
+                    PieceType::Wall => panic!("never format a wall!"),
                 };
 
                 // Piece seperator
                 write!(fmt, "|{}", c)?;
             }
             // Line seperator
-            write!(fmt, "| {}\n", y)?;
+            writeln!(fmt, "| {}", y)?;
         }
 
         // Nice line on bottom
@@ -59,7 +60,7 @@ impl MiniMap {
 
     fn get_piece(&self, loc: (i8, i8)) -> PieceType {
         if loc.0 < 0 || loc.0 > 10 || loc.1 < 0 || loc.1 > 10 {
-            PieceType::None
+            PieceType::Wall
         } else {
             self.0[loc.0 as usize][loc.1 as usize]
         }

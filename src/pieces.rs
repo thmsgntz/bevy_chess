@@ -8,12 +8,22 @@ pub enum PieceType {
     King,
     #[default]
     None,
+    Wall,
 }
 
 impl PieceType {
     pub fn is_enemy(&self, other: PieceType) -> bool {
         match self {
+            PieceType::None | PieceType::Wall => false,
+            PieceType::Attacker => matches!(other, PieceType::Defender | PieceType::King),
+            PieceType::Defender | PieceType::King => matches!(other, PieceType::Attacker),
+        }
+    }
+
+    pub fn is_enemy_or_wall(&self, other: PieceType) -> bool {
+        match self {
             PieceType::None => false,
+            PieceType::Wall => true,
             PieceType::Attacker => matches!(other, PieceType::Defender | PieceType::King),
             PieceType::Defender | PieceType::King => matches!(other, PieceType::Attacker),
         }

@@ -199,7 +199,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn multi_kill() {
         let mut app = App::new();
 
@@ -210,17 +209,15 @@ mod tests {
         expect_n_pieces(&mut app, 37);
 
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
-        force_move_piece(&mut app, Attacker, (3, 0), (2, 0));
+        force_move_piece(&mut app, Attacker, (3, 0), (0, 0));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
         // First kill, collateral damage ;)
         expect_n_pieces(&mut app, 36);
-
-        force_move_piece(&mut app, Attacker, (7, 0), (8, 0));
+        force_move_piece(&mut app, Attacker, (7, 0), (10, 0));
         force_move_piece(&mut app, Defender, (3, 5), (3, 0));
-        force_move_piece(&mut app, Attacker, (0, 3), (1, 3)); // Filler
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (7, 5), (7, 0));
-
-        force_move_piece(&mut app, Attacker, (1, 3), (0, 3)); // Filler
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (5, 3), (5, 1));
 
         expect_n_pieces(&mut app, 33);
