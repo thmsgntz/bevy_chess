@@ -10,12 +10,14 @@ impl std::fmt::Debug for MiniMap {
         // Draw the minimap, for debugging!
 
         // Nice line on top
-        write!(fmt, "\n{}\n", "_".repeat(23))?;
+        write!(fmt, "\n   {}\n", "_".repeat(23))?;
 
         // Draw a char for each piece
         // Iter in reverse because Bevy draws y=0 on the bottom
         for y_rev in 0..11 {
             let y = 10 - y_rev;
+
+            write!(fmt, "{: >2} ", y)?;
 
             for line in self.0.iter() {
                 // write!(fmt, "|")?;
@@ -28,13 +30,24 @@ impl std::fmt::Debug for MiniMap {
                     PieceType::Attacker => "A",
                 };
 
-                // Seperator
+                // Piece seperator
                 write!(fmt, "|{}", c)?;
             }
-            writeln!(fmt, "|")?;
-            // Nice line on bottom
+            // Line seperator
+            write!(fmt, "| {}\n", y)?;
         }
-        writeln!(fmt, "{}", "\u{AF}".repeat(23))
+
+        // Nice line on bottom
+        writeln!(fmt, "   {}", "\u{AF}".repeat(23))?;
+
+        // Draw numbers on the bottom
+        write!(fmt, "   ")?;
+
+        for x in 0..11 {
+            write!(fmt, " {}", x)?;
+        }
+
+        Ok(())
     }
 }
 
