@@ -109,7 +109,7 @@ impl FromWorld for SquareMaterials {
 }
 
 #[derive(Default)]
-struct SelectedSquare {
+pub struct SelectedSquare {
     entity: Option<Entity>,
 }
 #[derive(Default)]
@@ -352,5 +352,68 @@ impl Plugin for BoardPlugin {
         )
         .add_system(despawn_taken_pieces)
         .add_system(reset_selected.after("select_square"));
+    }
+}
+
+#[cfg(test)]
+
+pub mod test_helpers {
+    use super::*;
+    use bevy::app::App;
+
+    pub fn force_move_piece(app: &mut App, piece_loc: (i8, i8), target_loc: (i8, i8)) {
+        // Select the 'piece'
+        let square_entity_old = app
+            .world
+            .query::<(Entity, &Square)>()
+            .iter(&app.world)
+            .find(|p| p.1.x == piece_loc.0 && p.1.y == piece_loc.1)
+            .unwrap()
+            .0;
+
+        // Set the piece as the 'selected_square'
+        let mut selected_square = app.world.resource_mut::<SelectedSquare>();
+        selected_square.entity = Some(square_entity_old);
+
+        // Update twice to make sure we are moving
+        app.update();
+        app.update();
+
+        // Wait until the moving is done
+        loop {
+            let moving = app.world.resource::<Moving>();
+            if moving.0 == false {
+                break;
+            }
+            app.update();
+        }
+        app.update();
+
+        // Select the destination square
+        let square_entity_new = app
+            .world
+            .query::<(Entity, &Square)>()
+            .iter(&app.world)
+            .find(|p| p.1.x == target_loc.0 && p.1.y == target_loc.1)
+            .unwrap()
+            .0;
+
+        // Set the square as selected_square
+        let mut selected_square = app.world.resource_mut::<SelectedSquare>();
+        selected_square.entity = Some(square_entity_new);
+
+        // Update twice to make sure we are moving
+        app.update();
+        app.update();
+
+        // Wait until the moving is done
+        loop {
+            let moving = app.world.resource::<Moving>();
+            if moving.0 == false {
+                break;
+            }
+            app.update();
+        }
+        app.update();
     }
 }

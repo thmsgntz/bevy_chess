@@ -102,34 +102,7 @@ fn keyboard_input_system(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::board::{LastDestination, Taken};
-
-    fn move_piece(app: &mut App, piece_loc: (i8, i8), target_loc: (i8, i8)) {
-        // Make sure the target is empty
-        assert!(app
-            .world
-            .query::<&Piece>()
-            .iter(&app.world)
-            .find(|p| p.x == target_loc.0 && p.y == target_loc.1)
-            .is_none());
-
-        // Make sure the move of the piece is legal
-        assert!(piece_loc.0 == target_loc.0 || piece_loc.1 == target_loc.1);
-
-        let piece = &mut app
-            .world
-            .query::<&mut Piece>()
-            .iter_mut(&mut app.world)
-            .find(|p| p.x == piece_loc.0 && p.y == piece_loc.1)
-            .unwrap();
-        piece.x = target_loc.0;
-        piece.y = target_loc.1;
-
-        let mut last_destination = app.world.resource_mut::<LastDestination>();
-
-        last_destination.x = target_loc.0;
-        last_destination.y = target_loc.1;
-    }
+    use crate::board::{test_helpers::*, Taken};
 
     #[test]
     fn spawn_board() {
@@ -159,13 +132,13 @@ mod tests {
         );
 
         // Move Defenders[4,4] to [4,1]
-        move_piece(&mut app, (4, 4), (4, 1));
+        force_move_piece(&mut app, (4, 4), (4, 1));
 
         // Move Attackers[7,0] to [7,2]
-        move_piece(&mut app, (7, 0), (7, 2));
+        force_move_piece(&mut app, (7, 0), (7, 2));
 
         // Move Defenders[6,4] to [6,1]
-        move_piece(&mut app, (6, 4), (6, 1));
+        force_move_piece(&mut app, (6, 4), (6, 1));
 
         app.update();
 
@@ -195,13 +168,13 @@ mod tests {
         );
 
         // Move Defenders[4,4] to [4,1]
-        move_piece(&mut app, (4, 4), (4, 1));
+        force_move_piece(&mut app, (4, 4), (4, 1));
 
         // Move Attackers[7,0] to [7,1]
-        move_piece(&mut app, (7, 0), (7, 1));
+        force_move_piece(&mut app, (7, 0), (7, 1));
 
         // Move Defenders[6,4] to [6,1]
-        move_piece(&mut app, (6, 4), (6, 1));
+        force_move_piece(&mut app, (6, 4), (6, 1));
 
         app.update();
 
