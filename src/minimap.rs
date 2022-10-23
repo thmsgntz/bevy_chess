@@ -1,4 +1,6 @@
 use crate::pieces::*;
+use crate::Taken;
+use bevy::ecs::{entity::Entity, query::Without, system::Query};
 
 #[derive(Default)]
 pub struct MiniMap([[PieceType; 11]; 11]);
@@ -12,11 +14,14 @@ impl std::fmt::Debug for MiniMap {
 
         // Draw a char for each piece
         // Iter in reverse because Bevy draws y=0 on the bottom
-        for line in self.0.iter().rev() {
-            write!(fmt, "|")?;
+        for y_rev in 0..11 {
+            let y = 10 - y_rev;
 
-            for piece in line {
-                let c = match piece {
+            for line in self.0.iter() {
+                // write!(fmt, "|")?;
+
+                // for piece in line {
+                let c = match line[y] {
                     PieceType::None => " ",
                     PieceType::King => "K",
                     PieceType::Defender => "D",
@@ -24,12 +29,12 @@ impl std::fmt::Debug for MiniMap {
                 };
 
                 // Seperator
-                write!(fmt, "{}|", c)?;
+                write!(fmt, "|{}", c)?;
             }
-            write!(fmt, "\n")?;
+            writeln!(fmt, "|")?;
+            // Nice line on bottom
         }
-        // Nice line on bottom
-        write!(fmt, "{}\n", "\u{AF}".repeat(23))
+        writeln!(fmt, "{}", "\u{AF}".repeat(23))
     }
 }
 
@@ -47,29 +52,56 @@ impl MiniMap {
         }
     }
 
-    pub fn detect_killings(&self) -> Vec<(i8, i8)> {
+    fn get_neighbours(&self, loc: (i8, i8)) -> [(i8, i8); 4] {
+        let (x, y) = loc;
+        [(x, y - 1), (x, y + 1), (x - 1, y), (x + 1, y)]
+    }
+
+    pub fn detect_killings(&self, last_dest: (i8, i8)) -> Vec<(i8, i8)> {
         // Check all the easy pieces
 
         let mut retval = vec![];
 
-        for x in 0..11 {
-            for y in 0..11 {
-                let loc = self.get_piece((x, y));
+        for neighbours in self.get_neighbours(last_dest) {
+            let loc = self.get_piece(neighbours);
+            let [up_loc, down_loc, left_loc, right_loc] = self.get_neighbours(neighbours);
 
-                let up = self.get_piece((x, y - 1));
-                let down = self.get_piece((x, y + 1));
+            let up = self.get_piece(up_loc);
+            let down = self.get_piece(down_loc);
+            let left = self.get_piece(left_loc);
+            let right = self.get_piece(right_loc);
 
-                let left = self.get_piece((x - 1, y));
-                let right = self.get_piece((x + 1, y));
-
-                if (up.is_enemy(loc) && down.is_enemy(loc))
-                    || (left.is_enemy(loc) && right.is_enemy(loc))
-                {
-                    retval.push((x, y));
-                }
+            if (up.is_enemy(loc) && down.is_enemy(loc))
+                || (left.is_enemy(loc) && right.is_enemy(loc))
+            {
+                retval.push(neighbours);
             }
         }
 
         retval
+    }
+
+    pub fn from_query(query: &Query<(Entity, &Piece), Without<Taken>>) -> Self {
+        let mut map: MiniMap = Default::default();
+        for (_entity, piece) in query.iter() {
+            map.set_piece(piece);
+        }
+        map
+    }
+}
+
+#[cfg(test)]
+pub mod test_helpers {
+    use super::*;
+    use bevy::app::App;
+    impl MiniMap {
+        pub fn from_app(app: &mut App) -> Self {
+            let mut map: MiniMap = Default::default();
+            for (_entity, piece) in app.world.query::<(Entity, &Piece)>().iter(&app.world) {
+                map.set_piece(piece);
+            }
+
+            map
+        }
     }
 }

@@ -16,7 +16,7 @@ fn init_next_move_text(mut commands: Commands, asset_server: ResMut<AssetServer>
             TextBundle::from_section(
                 "Next move: Defender",
                 TextStyle {
-                    font: font.clone(),
+                    font,
                     font_size: 40.0,
                     color: Color::rgb(0.8, 0.8, 0.8),
                 },

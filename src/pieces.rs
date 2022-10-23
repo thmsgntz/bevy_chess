@@ -14,20 +14,14 @@ impl PieceType {
     pub fn is_enemy(&self, other: PieceType) -> bool {
         match self {
             PieceType::None => false,
-            PieceType::Attacker => match other {
-                PieceType::Defender | PieceType::King => true,
-                _ => false,
-            },
-            PieceType::Defender | PieceType::King => match other {
-                PieceType::Attacker => true,
-                _ => false,
-            },
+            PieceType::Attacker => matches!(other, PieceType::Defender | PieceType::King),
+            PieceType::Defender | PieceType::King => matches!(other, PieceType::Attacker),
         }
     }
 }
 
 impl Piece {
-    pub fn to_piecetype(&self) -> PieceType {
+    pub fn to_piecetype(self) -> PieceType {
         if self.is_king {
             PieceType::King
         } else if self.player == Player::Defender {
@@ -174,8 +168,8 @@ fn create_pieces(
     spawn_king(
         &mut commands,
         white_material.clone(),
-        king_handle.clone(),
-        king_cross_handle.clone(),
+        king_handle,
+        king_cross_handle,
         (5, 5),
     );
 
@@ -194,22 +188,22 @@ fn create_pieces(
         }
     }
 
-    for location in vec![(5, 3), (5, 7), (7, 5), (3, 5)] {
+    for location in &[(5, 3), (5, 7), (7, 5), (3, 5)] {
         spawn_defender(
             &mut commands,
             white_material.clone(),
             pawn_handle.clone(),
-            location,
+            *location,
         );
     }
 
     // Black pawns aka attackers
-    for location in vec![(5, 9), (5, 1), (9, 5), (1, 5)] {
+    for location in &[(5, 9), (5, 1), (9, 5), (1, 5)] {
         spawn_attacker(
             &mut commands,
             black_material.clone(),
             pawn_handle.clone(),
-            location,
+            *location,
         );
     }
 

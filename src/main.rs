@@ -85,12 +85,12 @@ fn keyboard_input_system(
         }
     }
 
-    if home == true {
+    if home {
         let home = Transform::from_matrix(Mat4::from_rotation_translation(
             Quat::from_xyzw(-0.3, -0.5, -0.3, 0.5).normalize(),
             Vec3::new(-7.0, 20.0, 4.0),
         ));
-        *camera_transform = home.clone();
+        *camera_transform = home;
     } else {
         velocity = velocity.normalize_or_zero();
 
@@ -103,6 +103,7 @@ fn keyboard_input_system(
 mod tests {
     use super::*;
     use crate::board::{test_helpers::*, Taken};
+    use crate::minimap::MiniMap;
 
     #[test]
     fn spawn_board() {
@@ -112,7 +113,12 @@ mod tests {
 
         app.update();
 
-        assert_eq!(app.world.query::<&Piece>().iter(&app.world).len(), 37);
+        assert_eq!(
+            app.world.query::<&Piece>().iter(&app.world).len(),
+            37,
+            "{:?}",
+            MiniMap::from_app(&mut app)
+        );
     }
 
     #[test]
@@ -128,7 +134,9 @@ mod tests {
                 .query_filtered::<&Piece, Without<Taken>>()
                 .iter(&app.world)
                 .len(),
-            37
+            37,
+            "{:?}",
+            MiniMap::from_app(&mut app)
         );
 
         // Move Defenders[4,4] to [4,1]
@@ -140,14 +148,14 @@ mod tests {
         // Move Defenders[6,4] to [6,1]
         force_move_piece(&mut app, (6, 4), (6, 1));
 
-        app.update();
-
         assert_eq!(
             app.world
                 .query_filtered::<&Piece, Without<Taken>>()
                 .iter(&app.world)
                 .len(),
-            36
+            36,
+            "{:?}",
+            MiniMap::from_app(&mut app)
         );
     }
 
@@ -164,7 +172,9 @@ mod tests {
                 .query_filtered::<&Piece, Without<Taken>>()
                 .iter(&app.world)
                 .len(),
-            37
+            37,
+            "{:?}",
+            MiniMap::from_app(&mut app)
         );
 
         // Move Defenders[4,4] to [4,1]
@@ -176,6 +186,23 @@ mod tests {
         // Move Defenders[6,4] to [6,1]
         force_move_piece(&mut app, (6, 4), (6, 1));
 
+        assert_eq!(
+            app.world
+                .query_filtered::<&Piece, Without<Taken>>()
+                .iter(&app.world)
+                .len(),
+            36,
+            "{:?}",
+            MiniMap::from_app(&mut app)
+        );
+    }
+
+    #[test]
+    fn simple_kill_but_not_the_mover_in_the_turn_after() {
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
         app.update();
 
         assert_eq!(
@@ -183,7 +210,31 @@ mod tests {
                 .query_filtered::<&Piece, Without<Taken>>()
                 .iter(&app.world)
                 .len(),
-            36
+            37,
+            "{:?}",
+            MiniMap::from_app(&mut app)
+        );
+
+        // Move Defenders[4,4] to [4,2]
+        force_move_piece(&mut app, (4, 4), (4, 2));
+
+        // Move Attackers[3,0] to [3,1]
+        force_move_piece(&mut app, (3, 0), (3, 1));
+
+        // Move Defenders[6,4] to [6,1]
+        force_move_piece(&mut app, (4, 2), (4, 1));
+
+        // Move Attackers[7,0] to [7,1]
+        force_move_piece(&mut app, (7, 0), (7, 1));
+
+        assert_eq!(
+            app.world
+                .query_filtered::<&Piece, Without<Taken>>()
+                .iter(&app.world)
+                .len(),
+            37,
+            "{:?}",
+            MiniMap::from_app(&mut app)
         );
     }
 }

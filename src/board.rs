@@ -271,28 +271,21 @@ fn check_killing(
     last_dest: Res<LastDestination>,
     query: Query<(Entity, &Piece), Without<Taken>>,
 ) {
-    let mut map: MiniMap = Default::default();
-
-    // First build a minimap
-    //TODO: keep a minimap in stead of building every time
-    for (_entity, piece) in query.iter() {
-        map.set_piece(piece);
-    }
-
+    let map = MiniMap::from_query(&query);
     // dbg!(&map);
 
     // Get list of locations where pieces are killed
-    let killings = map.detect_killings();
+    let killings = map.detect_killings((last_dest.x, last_dest.y));
 
     // Then iter each piece, and see if it is killed
     for kill in &killings {
         if kill.0 == last_dest.x && kill.1 == last_dest.y {
-            print!("Not killing piece {:?}\n", kill);
+            println!("Not killing piece {:?}", kill);
             continue;
         }
         for (entity, piece) in query.iter() {
             if kill.0 == piece.x && kill.1 == piece.y {
-                print!("Killing {:?}, not {:?}\n", kill, last_dest);
+                println!("Killing {:?}, not {:?}", kill, last_dest);
                 commands.entity(entity).insert(Taken);
             }
         }
@@ -356,7 +349,6 @@ impl Plugin for BoardPlugin {
 }
 
 #[cfg(test)]
-
 pub mod test_helpers {
     use super::*;
     use bevy::app::App;
