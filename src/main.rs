@@ -102,8 +102,18 @@ fn keyboard_input_system(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::board::{test_helpers::*, Taken};
+    use crate::board::test_helpers::*;
     use crate::minimap::MiniMap;
+    use crate::Player::{Attacker, Defender};
+
+    fn expect_n_pieces(app: &mut App, n: usize) {
+        assert_eq!(
+            app.world.query::<&Piece>().iter(&app.world).len(),
+            n,
+            "{:?}",
+            MiniMap::from_app(app)
+        );
+    }
 
     #[test]
     fn spawn_board() {
@@ -113,12 +123,7 @@ mod tests {
 
         app.update();
 
-        assert_eq!(
-            app.world.query::<&Piece>().iter(&app.world).len(),
-            37,
-            "{:?}",
-            MiniMap::from_app(&mut app)
-        );
+        expect_n_pieces(&mut app, 37);
     }
 
     #[test]
@@ -129,34 +134,13 @@ mod tests {
 
         app.update();
 
-        assert_eq!(
-            app.world
-                .query_filtered::<&Piece, Without<Taken>>()
-                .iter(&app.world)
-                .len(),
-            37,
-            "{:?}",
-            MiniMap::from_app(&mut app)
-        );
+        expect_n_pieces(&mut app, 37);
 
-        // Move Defenders[4,4] to [4,1]
-        force_move_piece(&mut app, (4, 4), (4, 1));
+        force_move_piece(&mut app, Defender, (4, 4), (4, 1));
+        force_move_piece(&mut app, Attacker, (7, 0), (7, 2));
+        force_move_piece(&mut app, Defender, (6, 4), (6, 1));
 
-        // Move Attackers[7,0] to [7,2]
-        force_move_piece(&mut app, (7, 0), (7, 2));
-
-        // Move Defenders[6,4] to [6,1]
-        force_move_piece(&mut app, (6, 4), (6, 1));
-
-        assert_eq!(
-            app.world
-                .query_filtered::<&Piece, Without<Taken>>()
-                .iter(&app.world)
-                .len(),
-            36,
-            "{:?}",
-            MiniMap::from_app(&mut app)
-        );
+        expect_n_pieces(&mut app, 36);
     }
 
     #[test]
@@ -167,34 +151,13 @@ mod tests {
 
         app.update();
 
-        assert_eq!(
-            app.world
-                .query_filtered::<&Piece, Without<Taken>>()
-                .iter(&app.world)
-                .len(),
-            37,
-            "{:?}",
-            MiniMap::from_app(&mut app)
-        );
+        expect_n_pieces(&mut app, 37);
 
-        // Move Defenders[4,4] to [4,1]
-        force_move_piece(&mut app, (4, 4), (4, 1));
+        force_move_piece(&mut app, Defender, (4, 4), (4, 1));
+        force_move_piece(&mut app, Attacker, (7, 0), (7, 1));
+        force_move_piece(&mut app, Defender, (6, 4), (6, 1));
 
-        // Move Attackers[7,0] to [7,1]
-        force_move_piece(&mut app, (7, 0), (7, 1));
-
-        // Move Defenders[6,4] to [6,1]
-        force_move_piece(&mut app, (6, 4), (6, 1));
-
-        assert_eq!(
-            app.world
-                .query_filtered::<&Piece, Without<Taken>>()
-                .iter(&app.world)
-                .len(),
-            36,
-            "{:?}",
-            MiniMap::from_app(&mut app)
-        );
+        expect_n_pieces(&mut app, 36);
     }
 
     #[test]
@@ -205,36 +168,13 @@ mod tests {
 
         app.update();
 
-        assert_eq!(
-            app.world
-                .query_filtered::<&Piece, Without<Taken>>()
-                .iter(&app.world)
-                .len(),
-            37,
-            "{:?}",
-            MiniMap::from_app(&mut app)
-        );
+        expect_n_pieces(&mut app, 37);
 
-        // Move Defenders[4,4] to [4,2]
-        force_move_piece(&mut app, (4, 4), (4, 2));
+        force_move_piece(&mut app, Defender, (4, 4), (4, 2));
+        force_move_piece(&mut app, Attacker, (3, 0), (3, 1));
+        force_move_piece(&mut app, Defender, (4, 2), (4, 1));
+        force_move_piece(&mut app, Attacker, (7, 0), (7, 1));
 
-        // Move Attackers[3,0] to [3,1]
-        force_move_piece(&mut app, (3, 0), (3, 1));
-
-        // Move Defenders[6,4] to [6,1]
-        force_move_piece(&mut app, (4, 2), (4, 1));
-
-        // Move Attackers[7,0] to [7,1]
-        force_move_piece(&mut app, (7, 0), (7, 1));
-
-        assert_eq!(
-            app.world
-                .query_filtered::<&Piece, Without<Taken>>()
-                .iter(&app.world)
-                .len(),
-            37,
-            "{:?}",
-            MiniMap::from_app(&mut app)
-        );
+        expect_n_pieces(&mut app, 37);
     }
 }

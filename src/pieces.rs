@@ -1,7 +1,7 @@
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 
-#[derive(Clone, Copy, PartialEq, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
 pub enum PieceType {
     Defender,
     Attacker,
@@ -32,7 +32,7 @@ impl Piece {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Player {
     Defender,
     Attacker,

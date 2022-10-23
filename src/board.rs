@@ -19,12 +19,7 @@ fn create_board(
     meshes: Option<ResMut<Assets<Mesh>>>,
     materials: Option<Res<SquareMaterials>>,
 ) {
-    // Add meshes
-    let mesh = if let Some(mut m) = meshes {
-        Some(m.add(Mesh::from(shape::Plane { size: 1. })))
-    } else {
-        None
-    };
+    let mesh = meshes.map(|mut m| m.add(Mesh::from(shape::Plane { size: 1. })));
 
     // Spawn 64 squares
     for i in 0..11 {
@@ -65,10 +60,9 @@ fn color_squares(
 ) {
     // Get entity under the cursor, if there is one
     let top_entity = match picking_camera_query.iter().last() {
-        Some(picking_camera) => match picking_camera.intersect_top() {
-            Some((entity, _intersection)) => Some(entity),
-            None => None,
-        },
+        Some(picking_camera) => picking_camera
+            .intersect_top()
+            .map(|(entity, _intersection)| entity),
         None => None,
     };
 
@@ -353,7 +347,12 @@ pub mod test_helpers {
     use super::*;
     use bevy::app::App;
 
-    pub fn force_move_piece(app: &mut App, piece_loc: (i8, i8), target_loc: (i8, i8)) {
+    pub fn force_move_piece(
+        app: &mut App,
+        player: Player,
+        piece_loc: (i8, i8),
+        target_loc: (i8, i8),
+    ) {
         // Select the 'piece'
         let square_entity_old = app
             .world
@@ -369,6 +368,15 @@ pub mod test_helpers {
 
         // Update twice to make sure we are moving
         app.update();
+
+        let selected_piece = app.world.resource::<SelectedPiece>().entity.unwrap();
+
+        assert_eq!(
+            app.world.get::<Piece>(selected_piece).unwrap().player,
+            player,
+            "Selected piece is not of the correct player"
+        );
+
         app.update();
 
         // Wait until the moving is done
