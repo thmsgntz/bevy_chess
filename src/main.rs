@@ -191,9 +191,11 @@ mod tests {
         force_move_piece(&mut app, Defender, (4, 4), (4, 2));
         force_move_piece(&mut app, Attacker, (3, 0), (3, 1));
         force_move_piece(&mut app, Defender, (4, 2), (4, 1));
-        force_move_piece(&mut app, Attacker, (7, 0), (7, 1));
+        force_move_piece(&mut app, Attacker, (4, 0), (3, 0));
+        skip_turn(&mut app, Defender);
+        force_move_piece(&mut app, Attacker, (3, 0), (4, 0));
 
-        expect_n_pieces(&mut app, 31);
+        expect_n_pieces(&mut app, 37);
     }
 
     #[test]

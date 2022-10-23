@@ -266,17 +266,12 @@ fn check_killing(
     query: Query<(Entity, &Piece), Without<Taken>>,
 ) {
     let map = MiniMap::from_query(&query);
-    // dbg!(&map);
 
     // Get list of locations where pieces are killed
     let killings = map.detect_killings((last_dest.x, last_dest.y));
 
     // Then iter each piece, and see if it is killed
     for kill in &killings {
-        if kill.0 == last_dest.x && kill.1 == last_dest.y {
-            println!("Not killing piece {:?}", kill);
-            continue;
-        }
         for (entity, piece) in query.iter() {
             if kill.0 == piece.x && kill.1 == piece.y {
                 println!("Killing {:?}, not {:?}", kill, last_dest);
@@ -369,7 +364,11 @@ pub mod test_helpers {
         // Update twice to make sure we are moving
         app.update();
 
-        let selected_piece = app.world.resource::<SelectedPiece>().entity.unwrap();
+        let selected_piece = app
+            .world
+            .resource::<SelectedPiece>()
+            .entity
+            .expect("No piece is selected!");
 
         assert_eq!(
             app.world.get::<Piece>(selected_piece).unwrap().player,
@@ -415,5 +414,13 @@ pub mod test_helpers {
             app.update();
         }
         app.update();
+    }
+
+    pub fn skip_turn(app: &mut App, player: Player) {
+        let mut player_turn = app.world.get_resource_mut::<PlayerTurn>().unwrap();
+
+        assert_eq!(player_turn.0, player);
+
+        player_turn.change();
     }
 }

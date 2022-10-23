@@ -79,15 +79,20 @@ impl MiniMap {
             let loc = self.get_piece(neighbours);
             let [up_loc, down_loc, left_loc, right_loc] = self.get_neighbours(neighbours);
 
-            let up = self.get_piece(up_loc);
-            let down = self.get_piece(down_loc);
-            let left = self.get_piece(left_loc);
-            let right = self.get_piece(right_loc);
+            if up_loc == last_dest || down_loc == last_dest {
+                let up = self.get_piece(up_loc);
+                let down = self.get_piece(down_loc);
 
-            if (up.is_enemy(loc) && down.is_enemy(loc))
-                || (left.is_enemy(loc) && right.is_enemy(loc))
-            {
-                retval.push(neighbours);
+                if up.is_enemy(loc) && down.is_enemy(loc) {
+                    retval.push(neighbours);
+                }
+            } else if left_loc == last_dest || right_loc == last_dest {
+                let left = self.get_piece(left_loc);
+                let right = self.get_piece(right_loc);
+
+                if left.is_enemy(loc) && right.is_enemy(loc) {
+                    retval.push(neighbours);
+                }
             }
         }
 
