@@ -9,6 +9,7 @@ pub enum PieceType {
     #[default]
     None,
     Wall,
+    Castle,
 }
 
 impl PieceType {
@@ -17,6 +18,7 @@ impl PieceType {
             PieceType::None | PieceType::Wall => false,
             PieceType::Attacker => matches!(other, PieceType::Defender | PieceType::King),
             PieceType::Defender | PieceType::King => matches!(other, PieceType::Attacker),
+            PieceType::Castle => true,
         }
     }
 

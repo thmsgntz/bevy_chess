@@ -2,7 +2,6 @@ use crate::pieces::*;
 use crate::Taken;
 use bevy::ecs::{entity::Entity, query::Without, system::Query};
 
-#[derive(Default)]
 pub struct MiniMap([[PieceType; 11]; 11]);
 
 impl std::fmt::Debug for MiniMap {
@@ -28,6 +27,7 @@ impl std::fmt::Debug for MiniMap {
                     PieceType::King => "K",
                     PieceType::Defender => "D",
                     PieceType::Attacker => "A",
+                    PieceType::Castle => "C",
                     PieceType::Wall => panic!("never format a wall!"),
                 };
 
@@ -52,9 +52,18 @@ impl std::fmt::Debug for MiniMap {
     }
 }
 
+impl Default for MiniMap {
+    fn default() -> Self {
+        let mut retval: MiniMap = MiniMap {
+            0: [[PieceType::None; 11]; 11],
+        };
+        retval.0[5][5] = PieceType::Castle;
+
+        retval
+    }
+}
 impl MiniMap {
     pub fn set_piece(&mut self, piece: &Piece) {
-        if piece.is_king {}
         self.0[piece.x as usize][piece.y as usize] = piece.to_piecetype();
     }
 

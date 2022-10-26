@@ -14,6 +14,8 @@ impl Square {
     }
 }
 
+const CORNERS_AND_CENTER: [(i8, i8); 5] = [(0, 0), (10, 10), (10, 0), (0, 10), (5, 5)];
+
 fn create_board(
     mut commands: Commands,
     meshes: Option<ResMut<Assets<Mesh>>>,
@@ -24,22 +26,28 @@ fn create_board(
     // Spawn 64 squares
     for i in 0..11 {
         for j in 0..11 {
+            let square = Square { x: i, y: j };
+
             if cfg!(test) {
                 commands
                     .spawn_bundle(PickableBundle {
                         ..Default::default()
                     })
-                    .insert(Square { x: i, y: j });
+                    .insert(square);
             } else {
+                let material = if CORNERS_AND_CENTER.contains(&(i, j)) {
+                    materials.as_ref().unwrap().red_color.clone()
+                } else if square.is_white() {
+                    materials.as_ref().unwrap().white_color.clone()
+                } else {
+                    materials.as_ref().unwrap().black_color.clone()
+                };
+
                 commands
                     .spawn_bundle(PbrBundle {
                         mesh: mesh.as_ref().unwrap().clone(),
                         // Change material according to position to get alternating pattern
-                        material: if (i + j + 1) % 2 == 0 {
-                            materials.as_ref().unwrap().white_color.clone()
-                        } else {
-                            materials.as_ref().unwrap().black_color.clone()
-                        },
+                        material,
                         transform: Transform::from_translation(Vec3::new(i as f32, 0., j as f32)),
                         ..Default::default()
                     })
@@ -72,6 +80,8 @@ fn color_squares(
             materials.highlight_color.clone()
         } else if Some(entity) == selected_square.entity {
             materials.selected_color.clone()
+        } else if CORNERS_AND_CENTER.contains(&(square.x, square.y)) {
+            materials.red_color.clone()
         } else if square.is_white() {
             materials.white_color.clone()
         } else {
@@ -85,6 +95,7 @@ struct SquareMaterials {
     selected_color: Handle<StandardMaterial>,
     black_color: Handle<StandardMaterial>,
     white_color: Handle<StandardMaterial>,
+    red_color: Handle<StandardMaterial>,
 }
 
 impl FromWorld for SquareMaterials {
@@ -98,6 +109,7 @@ impl FromWorld for SquareMaterials {
             selected_color: materials.add(Color::rgb(0.9, 0.1, 0.1).into()),
             black_color: materials.add(Color::rgb(0., 0.1, 0.1).into()),
             white_color: materials.add(Color::rgb(1., 0.9, 0.9).into()),
+            red_color: materials.add(Color::rgb(1., 0., 0.).into()),
         }
     }
 }
