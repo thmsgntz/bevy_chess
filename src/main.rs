@@ -199,7 +199,10 @@ mod tests {
     }
 
     #[test]
-    fn multi_kill() {
+    fn multi_kill1() {
+        /*
+        Create a cluster of attackers at the bottom, def surrounds them
+        */
         let mut app = App::new();
 
         app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
@@ -221,5 +224,89 @@ mod tests {
         force_move_piece(&mut app, Defender, (5, 3), (5, 1));
 
         expect_n_pieces(&mut app, 33);
+    }
+
+    #[test]
+    fn multi_kill2() {
+        /*
+        Similar to multi_kill1, only cluster at the bottom is chopped in half.
+        */
+
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        force_move_piece(&mut app, Defender, (4, 4), (4, 1));
+        force_move_piece(&mut app, Attacker, (3, 0), (0, 0));
+        force_move_piece(&mut app, Defender, (6, 4), (6, 1));
+        // First kill, collateral damage ;)
+        expect_n_pieces(&mut app, 36);
+        force_move_piece(&mut app, Attacker, (5, 0), (5, 1));
+        force_move_piece(&mut app, Defender, (6, 1), (6, 2));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 2), (6, 1));
+        // First second kill, more collateral damage ;)
+        expect_n_pieces(&mut app, 35);
+
+        force_move_piece(&mut app, Attacker, (7, 0), (10, 0));
+        force_move_piece(&mut app, Defender, (3, 5), (3, 0));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (7, 5), (7, 0));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 3), (5, 0));
+
+        expect_n_pieces(&mut app, 33);
+    }
+
+    #[test]
+    fn multi_kill3() {
+        /*
+        Similar to multi_kill2, only the 2 clusters are now size 2.
+        */
+
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        force_move_piece(&mut app, Defender, (4, 4), (4, 1));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 4), (6, 1));
+        // First kill, collateral damage ;)
+        expect_n_pieces(&mut app, 36);
+        force_move_piece(&mut app, Attacker, (5, 0), (5, 1));
+        force_move_piece(&mut app, Defender, (6, 1), (6, 2));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 2), (6, 1));
+        // First second kill, more collateral damage ;)
+        expect_n_pieces(&mut app, 35);
+
+        // Maneuver left side
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (3, 5), (3, 1));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (4, 5), (2, 5));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (2, 5), (2, 0));
+        skip_turn(&mut app, Attacker);
+
+        // Maneuver right side
+        force_move_piece(&mut app, Defender, (7, 5), (7, 1));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 5), (8, 5));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (8, 5), (8, 0));
+        skip_turn(&mut app, Attacker);
+
+        force_move_piece(&mut app, Defender, (5, 3), (5, 0));
+
+        expect_n_pieces(&mut app, 31);
     }
 }

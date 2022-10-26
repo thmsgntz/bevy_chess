@@ -365,3 +365,30 @@ impl Plugin for PiecesPlugin {
             .add_system(move_pieces);
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    #[test]
+    fn is_enemy_test() {
+        let truth_table = [
+            (PieceType::Attacker, PieceType::Defender, true),
+            (PieceType::Attacker, PieceType::Attacker, false),
+            (PieceType::Defender, PieceType::Defender, false),
+            (PieceType::King, PieceType::Defender, false),
+            (PieceType::Attacker, PieceType::King, true),
+            (PieceType::Attacker, PieceType::None, false),
+            (PieceType::Defender, PieceType::None, false),
+            (PieceType::King, PieceType::None, false),
+            (PieceType::Attacker, PieceType::Wall, false),
+            (PieceType::Defender, PieceType::Wall, false),
+            (PieceType::King, PieceType::Wall, false),
+        ];
+
+        for entry in truth_table {
+            assert_eq!(entry.0.is_enemy(entry.1), entry.2);
+            assert_eq!(entry.1.is_enemy(entry.0), entry.2);
+        }
+    }
+}
