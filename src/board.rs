@@ -265,17 +265,19 @@ fn check_killing(
     last_dest: Res<LastDestination>,
     query: Query<(Entity, &Piece), Without<Taken>>,
 ) {
-    let map = MiniMap::from_query(&query);
+    if last_dest.is_changed() {
+        let map = MiniMap::from_query(&query);
 
-    // Get list of locations where pieces are killed
-    let killings = map.detect_killings((last_dest.x, last_dest.y));
+        // Get list of locations where pieces are killed
+        let killings = map.detect_killings((last_dest.x, last_dest.y));
 
-    // Then iter each piece, and see if it is killed
-    for kill in &killings {
-        for (entity, piece) in query.iter() {
-            if kill.0 == piece.x && kill.1 == piece.y {
-                println!("Killing {:?}, not {:?}", kill, last_dest);
-                commands.entity(entity).insert(Taken);
+        // Then iter each piece, and see if it is killed
+        for kill in &killings {
+            for (entity, piece) in query.iter() {
+                if kill.0 == piece.x && kill.1 == piece.y {
+                    println!("Killing {:?}, not {:?}", kill, last_dest);
+                    commands.entity(entity).insert(Taken);
+                }
             }
         }
     }

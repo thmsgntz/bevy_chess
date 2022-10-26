@@ -48,7 +48,7 @@ impl std::fmt::Debug for MiniMap {
             write!(fmt, " {}", x)?;
         }
 
-        Ok(())
+        writeln!(fmt, "\n")
     }
 }
 
@@ -72,12 +72,93 @@ impl MiniMap {
     }
 
     pub fn detect_killings(&self, last_dest: (i8, i8)) -> Vec<(i8, i8)> {
-        // Check all the easy pieces
+        let retval = self.detect_multikill(&last_dest);
 
+        if retval.is_empty() {
+            // Check all the easy kills
+            self.detect_simple_kill(last_dest)
+        } else {
+            retval
+        }
+    }
+
+    fn detect_multikill(&self, last_dest: &(i8, i8)) -> Vec<(i8, i8)> {
+        let mut retval: Vec<(i8, i8)> = vec![];
+
+        let just_moved_piece = self.get_piece(*last_dest);
+
+        dbg!(&last_dest);
+
+        // For each neighbour of the just moved piece
+        for neighbour_loc in self.get_neighbours(*last_dest) {
+            let neighbour = self.get_piece(neighbour_loc);
+
+            if neighbour.is_friendly(just_moved_piece) {
+                // Ignore friendly neighbours
+                continue;
+            }
+
+            println!("Found an enemy neighbour! {:?}", neighbour_loc);
+
+            let mut done_group: Vec<(i8, i8)> = vec![];
+            let mut todo_group: Vec<(i8, i8)> = vec![];
+            let mut new_group: Vec<(i8, i8)> = vec![];
+
+            let mut found_gap: bool = false;
+
+            todo_group.push(neighbour_loc);
+
+            while !found_gap {
+                println!("Starting loop");
+                for p in &todo_group {
+                    for p_neighbour in self.get_neighbours(*p) {
+                        // Check if we already did that neighbour
+                        if done_group.contains(&p_neighbour) {
+                            continue;
+                        }
+
+                        let p_neighbour_piece = self.get_piece(p_neighbour);
+
+                        // If we find a gap, it's not closed yet!
+                        if p_neighbour_piece == PieceType::None {
+                            println!("Gap found! {:?}", p_neighbour);
+                            found_gap = true;
+                            break;
+                        } else if p_neighbour_piece.is_enemy(just_moved_piece) {
+                            new_group.push(p_neighbour);
+                        }
+                    }
+                }
+
+                println!("Found new group: {:?}", new_group);
+
+                done_group.append(&mut todo_group);
+                if new_group.is_empty() {
+                    break;
+                }
+                todo_group.append(&mut new_group);
+            }
+
+            if !found_gap {
+                retval.append(&mut done_group);
+            }
+
+            //
+
+            // println!("{:?} is an enemy of {:?}", neighbour_loc, last_dest);
+        }
+
+        println!("Found retval: {:?}\n\n", retval);
+
+        // vec![]
+        retval
+    }
+
+    fn detect_simple_kill(&self, last_dest: (i8, i8)) -> Vec<(i8, i8)> {
         let mut retval = vec![];
-
         for neighbours in self.get_neighbours(last_dest) {
             let loc = self.get_piece(neighbours);
+
             let [up_loc, down_loc, left_loc, right_loc] = self.get_neighbours(neighbours);
 
             if up_loc == last_dest || down_loc == last_dest {
@@ -96,7 +177,6 @@ impl MiniMap {
                 }
             }
         }
-
         retval
     }
 

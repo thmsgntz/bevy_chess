@@ -1,7 +1,7 @@
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 
-#[derive(Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
 pub enum PieceType {
     Defender,
     Attacker,
@@ -20,13 +20,8 @@ impl PieceType {
         }
     }
 
-    pub fn is_enemy_or_wall(&self, other: PieceType) -> bool {
-        match self {
-            PieceType::None => false,
-            PieceType::Wall => true,
-            PieceType::Attacker => matches!(other, PieceType::Defender | PieceType::King),
-            PieceType::Defender | PieceType::King => matches!(other, PieceType::Attacker),
-        }
+    pub fn is_friendly(&self, other: PieceType) -> bool {
+        !self.is_enemy(other)
     }
 }
 
