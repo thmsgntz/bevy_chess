@@ -127,6 +127,39 @@ mod tests {
     }
 
     #[test]
+    fn skip_turn_happy() {
+        // Test if the skip_turn function works as expected
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        skip_turn(&mut app, Defender);
+        skip_turn(&mut app, Attacker);
+        skip_turn(&mut app, Defender);
+    }
+
+    #[test]
+    #[should_panic]
+    fn skip_turn_illegal() {
+        // Test if the skip_turn function fails if we accidentally skip the same players turn twice
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        skip_turn(&mut app, Defender);
+        skip_turn(&mut app, Attacker);
+        skip_turn(&mut app, Attacker);
+    }
+
+    #[test]
     fn simple_kill() {
         let mut app = App::new();
 
