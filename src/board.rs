@@ -127,7 +127,7 @@ struct SelectedPiece {
 pub struct PlayerTurn(pub Player);
 impl Default for PlayerTurn {
     fn default() -> Self {
-        Self(Player::Defender)
+        Self(Player::Attacker)
     }
 }
 impl PlayerTurn {

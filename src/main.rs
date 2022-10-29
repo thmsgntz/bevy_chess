@@ -138,9 +138,9 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
-        skip_turn(&mut app, Defender);
         skip_turn(&mut app, Attacker);
         skip_turn(&mut app, Defender);
+        skip_turn(&mut app, Attacker);
     }
 
     #[test]
@@ -155,9 +155,9 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         skip_turn(&mut app, Defender);
-        skip_turn(&mut app, Attacker);
-        skip_turn(&mut app, Attacker);
+        skip_turn(&mut app, Defender);
     }
 
     #[test]
@@ -174,6 +174,7 @@ mod tests {
         expect_n_pieces(&mut app, 37);
 
         // First setup the board to kill an attacker
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         force_move_piece(&mut app, Attacker, (7, 0), (7, 2));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
@@ -198,6 +199,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         force_move_piece(&mut app, Attacker, (7, 0), (7, 1));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
@@ -217,6 +219,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 2));
         force_move_piece(&mut app, Attacker, (3, 0), (3, 1));
         force_move_piece(&mut app, Defender, (4, 2), (4, 1));
@@ -238,6 +241,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 2));
         force_move_piece(&mut app, Attacker, (3, 0), (3, 1));
         force_move_piece(&mut app, Defender, (4, 2), (4, 1));
@@ -262,6 +266,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         force_move_piece(&mut app, Attacker, (3, 0), (0, 0));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
@@ -291,6 +296,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         force_move_piece(&mut app, Attacker, (3, 0), (0, 0));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
@@ -327,6 +333,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
@@ -379,6 +386,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
@@ -440,6 +448,7 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));

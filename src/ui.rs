@@ -14,7 +14,7 @@ fn init_next_move_text(mut commands: Commands, asset_server: ResMut<AssetServer>
         // root node
         .spawn_bundle(
             TextBundle::from_section(
-                "Next move: Defender",
+                "Next move: Attacker",
                 TextStyle {
                     font,
                     font_size: 40.0,
