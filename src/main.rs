@@ -364,7 +364,7 @@ mod tests {
     #[test]
     fn only_king_can_stand_in_the_centre() {
         /*
-        Proof only the king can stand in the centre piece, other pieces can't.
+        Proof only the king can land on the centre piece, other pieces can't.
         Move king out of the centre
         Move king back into the centre
         Try move defender into the centre (fail)
@@ -418,6 +418,65 @@ mod tests {
         force_move_piece(&mut app, Defender, (5, 2), (5, 5));
         // Should be succesfull
         skip_turn(&mut app, Attacker);
+
+        expect_n_pieces(&mut app, 35);
+    }
+
+    #[test]
+    fn regular_pieces_can_jump_over_the_centre_piece() {
+        /*
+        Even if only the king can land on the centre piece, other pieces can move over it
+        Move king out of the centre
+        Move king back into the centre
+        Try move defender into the centre (fail)
+        Try move attacker into the centre (fail)
+        */
+
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        force_move_piece(&mut app, Defender, (4, 4), (4, 1));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 4), (6, 1));
+        // First kill, collateral damage ;)
+        expect_n_pieces(&mut app, 36);
+        force_move_piece(&mut app, Attacker, (5, 0), (5, 1));
+        force_move_piece(&mut app, Defender, (6, 1), (6, 2));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 2), (6, 1));
+        // First second kill, more collateral damage ;)
+        expect_n_pieces(&mut app, 35);
+
+        // Move the 2 Defenders below the king
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 3), (5, 0));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 4), (5, 1));
+        skip_turn(&mut app, Attacker);
+
+        // Move the King out of the centre place
+        force_move_piece(&mut app, Defender, (5, 5), (5, 2));
+
+        skip_turn(&mut app, Attacker);
+
+        // Try move a Defender over the centre piece
+        force_move_piece(&mut app, Defender, (5, 6), (5, 4));
+        // This should succeed, so skip attacker and move defender out of the way
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 4), (9, 4));
+
+        // Next try move an Attacker over the centre piece
+        force_move_piece(&mut app, Attacker, (0, 4), (5, 4));
+        skip_turn(&mut app, Defender);
+        force_move_piece(&mut app, Attacker, (5, 4), (5, 6));
+
+        // Last step should be succesfull, test it by skipping the defenders turn
+        skip_turn(&mut app, Defender);
 
         expect_n_pieces(&mut app, 35);
     }
