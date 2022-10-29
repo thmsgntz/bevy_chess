@@ -14,7 +14,7 @@ impl Square {
     }
 }
 
-const CORNERS_AND_CENTER: [(i8, i8); 5] = [(0, 0), (10, 10), (10, 0), (0, 10), (5, 5)];
+pub const CORNERS_AND_CENTER: [(i8, i8); 5] = [(0, 0), (10, 10), (10, 0), (0, 10), (5, 5)];
 
 fn create_board(
     mut commands: Commands,
@@ -383,12 +383,19 @@ pub mod test_helpers {
             .world
             .resource::<SelectedPiece>()
             .entity
-            .expect("No piece is selected!");
+            .unwrap_or_else(|| {
+                panic!(
+                    "No piece is selected! Probably incorrect player!\n{:?}->{:?}\n\n{:?}",
+                    piece_loc,
+                    target_loc,
+                    MiniMap::from_app(app)
+                )
+            });
 
         assert_eq!(
             app.world.get::<Piece>(selected_piece).unwrap().player,
             player,
-            "Selected piece is not of the correct player"
+            "Selected piece is not of the correct player! Should never happen!"
         );
 
         app.update();

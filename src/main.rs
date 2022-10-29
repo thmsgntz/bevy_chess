@@ -268,11 +268,11 @@ mod tests {
 
         skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
-        force_move_piece(&mut app, Attacker, (3, 0), (0, 0));
+        force_move_piece(&mut app, Attacker, (3, 0), (1, 0));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
         // First kill, collateral damage ;)
         expect_n_pieces(&mut app, 36);
-        force_move_piece(&mut app, Attacker, (7, 0), (10, 0));
+        force_move_piece(&mut app, Attacker, (7, 0), (9, 0));
         force_move_piece(&mut app, Defender, (3, 5), (3, 0));
         skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (7, 5), (7, 0));
@@ -298,7 +298,7 @@ mod tests {
 
         skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
-        force_move_piece(&mut app, Attacker, (3, 0), (0, 0));
+        force_move_piece(&mut app, Attacker, (3, 0), (1, 0));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
         // First kill, collateral damage ;)
         expect_n_pieces(&mut app, 36);
@@ -309,7 +309,7 @@ mod tests {
         // First second kill, more collateral damage ;)
         expect_n_pieces(&mut app, 35);
 
-        force_move_piece(&mut app, Attacker, (7, 0), (10, 0));
+        force_move_piece(&mut app, Attacker, (7, 0), (9, 0));
         force_move_piece(&mut app, Defender, (3, 5), (3, 0));
         skip_turn(&mut app, Attacker);
         force_move_piece(&mut app, Defender, (7, 5), (7, 0));

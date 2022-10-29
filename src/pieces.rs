@@ -1,3 +1,4 @@
+use crate::board::CORNERS_AND_CENTER;
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 
@@ -59,7 +60,7 @@ impl Piece {
         is_path_empty((self.x, self.y), new_position, &pieces)
             && ((self.x == new_position.0 && self.y != new_position.1)
                 || (self.y == new_position.1 && self.x != new_position.0))
-            && (self.is_king || new_position != (5, 5))
+            && (self.is_king || !CORNERS_AND_CENTER.contains(&new_position))
     }
 }
 
