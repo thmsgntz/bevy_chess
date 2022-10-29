@@ -360,4 +360,65 @@ mod tests {
 
         expect_n_pieces(&mut app, 31);
     }
+
+    #[test]
+    fn only_king_can_stand_in_the_centre() {
+        /*
+        Proof only the king can stand in the centre piece, other pieces can't.
+        Move king out of the centre
+        Move king back into the centre
+        Try move defender into the centre (fail)
+        Try move attacker into the centre (fail)
+        */
+
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        force_move_piece(&mut app, Defender, (4, 4), (4, 1));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 4), (6, 1));
+        // First kill, collateral damage ;)
+        expect_n_pieces(&mut app, 36);
+        force_move_piece(&mut app, Attacker, (5, 0), (5, 1));
+        force_move_piece(&mut app, Defender, (6, 1), (6, 2));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (6, 2), (6, 1));
+        // First second kill, more collateral damage ;)
+        expect_n_pieces(&mut app, 35);
+
+        // Move the 2 Defenders below the king
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 3), (5, 0));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 4), (5, 1));
+        skip_turn(&mut app, Attacker);
+
+        // Move the King out of the centre place
+        force_move_piece(&mut app, Defender, (5, 5), (5, 2));
+
+        // Move an Attacker in the direction of the centre piece
+        force_move_piece(&mut app, Attacker, (0, 4), (5, 4));
+
+        // Try move a Defender into the centre piece
+        force_move_piece(&mut app, Defender, (5, 6), (5, 5));
+        // Last step should have failed, so we skip the turn instead
+        skip_turn(&mut app, Defender);
+
+        // Try move an Attacker in the direction of the centre piece
+        force_move_piece(&mut app, Attacker, (5, 4), (5, 5));
+        // Last step should have failed, so move the attacker piece away instead
+        force_move_piece(&mut app, Attacker, (5, 4), (0, 4));
+
+        // Move the king back into the centre piece
+        force_move_piece(&mut app, Defender, (5, 2), (5, 5));
+        // Should be succesfull
+        skip_turn(&mut app, Attacker);
+
+        expect_n_pieces(&mut app, 35);
+    }
 }
