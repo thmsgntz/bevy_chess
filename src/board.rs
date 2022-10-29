@@ -310,6 +310,7 @@ fn despawn_taken_pieces(
     for (entity, piece) in query.iter() {
         // If the king is taken, we should exit
         if piece.is_king {
+            println!("Attackers win!");
             app_exit_events.send(AppExit);
         }
 

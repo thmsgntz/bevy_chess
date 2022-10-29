@@ -117,6 +117,7 @@ mod tests {
 
     #[test]
     fn spawn_board() {
+        // Test if we spawn a decent board of 37 pieces
         let mut app = App::new();
 
         app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
@@ -161,6 +162,9 @@ mod tests {
 
     #[test]
     fn simple_kill() {
+        // Test if the simple kill mechanism works
+        // A simple kill is done by surrounding a piece on 2 sides
+        // Note we kill both a defender and an attacker
         let mut app = App::new();
 
         app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
@@ -169,15 +173,23 @@ mod tests {
 
         expect_n_pieces(&mut app, 37);
 
+        // First setup the board to kill an attacker
         force_move_piece(&mut app, Defender, (4, 4), (4, 1));
         force_move_piece(&mut app, Attacker, (7, 0), (7, 2));
         force_move_piece(&mut app, Defender, (6, 4), (6, 1));
 
+        // Killed an attacker
         expect_n_pieces(&mut app, 36);
+
+        // Then try to kill a defender
+        force_move_piece(&mut app, Attacker, (7, 2), (6, 2));
+        // Killed an defender
+        expect_n_pieces(&mut app, 35);
     }
 
     #[test]
     fn simple_kill_but_not_the_mover() {
+        // Test that a piece that lands between two enemies is not killed
         let mut app = App::new();
 
         app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
@@ -195,6 +207,8 @@ mod tests {
 
     #[test]
     fn simple_kill_but_not_the_mover_in_the_turn_after() {
+        // Test that a piece that lands between two enemies is not killed
+        // Also not after an extra turn
         let mut app = App::new();
 
         app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
@@ -213,6 +227,9 @@ mod tests {
 
     #[test]
     fn simple_kill_but_not_from_a_bystander() {
+        // Test that piece that lands between two enemies is not killed
+        // Also not after a third enemy lands next to it
+        // (The only legal kill is if an ememy lands opposite an existing enemy)
         let mut app = App::new();
 
         app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
@@ -234,7 +251,8 @@ mod tests {
     #[test]
     fn multi_kill1() {
         /*
-        Create a cluster of attackers at the bottom, def surrounds them
+        Test the multi kill mechanic
+        Create a cluster of attackers at the bottom, defenders surrounds them
         */
         let mut app = App::new();
 
