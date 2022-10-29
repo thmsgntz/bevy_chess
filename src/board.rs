@@ -433,8 +433,17 @@ pub mod test_helpers {
     pub fn skip_turn(app: &mut App, player: Player) {
         let mut player_turn = app.world.get_resource_mut::<PlayerTurn>().unwrap();
 
-        assert_eq!(player_turn.0, player);
+        let active_player = player_turn.0;
 
+        // First change the player turn, so we can free the 'app' var
         player_turn.change();
+
+        // Check if the player was the one we expected
+        assert_eq!(
+            active_player,
+            player,
+            "\nError while skipping turns, incorrect player!\n{:?}",
+            MiniMap::from_app(app)
+        );
     }
 }
