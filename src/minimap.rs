@@ -1,3 +1,4 @@
+use crate::board::CORNERS_AND_CENTER;
 use crate::pieces::*;
 use crate::Taken;
 use bevy::ecs::{entity::Entity, query::Without, system::Query};
@@ -57,7 +58,10 @@ impl Default for MiniMap {
         let mut retval: MiniMap = MiniMap {
             0: [[PieceType::None; 11]; 11],
         };
-        retval.0[5][5] = PieceType::Castle;
+
+        for loc in CORNERS_AND_CENTER {
+            retval.0[loc.0 as usize][loc.1 as usize] = PieceType::Castle;
+        }
 
         retval
     }
@@ -174,14 +178,14 @@ impl MiniMap {
                 let up = self.get_piece(up_loc);
                 let down = self.get_piece(down_loc);
 
-                if up.is_enemy(loc) && down.is_enemy(loc) {
+                if up.is_enemy(loc) && down.is_enemy(loc) && loc != PieceType::King {
                     retval.push(neighbours);
                 }
             } else if left_loc == last_dest || right_loc == last_dest {
                 let left = self.get_piece(left_loc);
                 let right = self.get_piece(right_loc);
 
-                if left.is_enemy(loc) && right.is_enemy(loc) {
+                if left.is_enemy(loc) && right.is_enemy(loc) && loc != PieceType::King {
                     retval.push(neighbours);
                 }
             }

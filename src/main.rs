@@ -489,4 +489,101 @@ mod tests {
 
         expect_n_pieces(&mut app, 35);
     }
+
+    #[test]
+    fn king_is_not_killed_by_only_two() {
+        /*
+        When a king is surrounded by only 2, he is not killed
+        */
+
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (4, 4), (1, 4));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 4), (2, 4));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 3), (2, 3));
+        force_move_piece(&mut app, Attacker, (5, 1), (5, 2));
+        force_move_piece(&mut app, Defender, (6, 4), (3, 4));
+        force_move_piece(&mut app, Attacker, (4, 0), (4, 3));
+        expect_n_pieces(&mut app, 37);
+        // Move king
+        force_move_piece(&mut app, Defender, (5, 5), (5, 3));
+        // Surround king left-right
+        force_move_piece(&mut app, Attacker, (6, 0), (6, 3));
+        // Should not die
+        expect_n_pieces(&mut app, 37);
+        skip_turn(&mut app, Defender);
+
+        // Not surround left-right
+
+        force_move_piece(&mut app, Attacker, (6, 3), (6, 0));
+        skip_turn(&mut app, Defender);
+        // But surround up-down
+        force_move_piece(&mut app, Attacker, (10, 4), (5, 4));
+
+        expect_n_pieces(&mut app, 37);
+    }
+
+    #[test]
+    fn but_king_is_killed_by_four() {
+        /*
+        When a king is surrounded by only 2, he is not killed
+        But when a king is surrounded by 4, he IS killed.
+        */
+
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (4, 4), (1, 4));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 4), (2, 4));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 3), (2, 3));
+        force_move_piece(&mut app, Attacker, (5, 1), (5, 2));
+        force_move_piece(&mut app, Defender, (6, 4), (3, 4));
+        force_move_piece(&mut app, Attacker, (4, 0), (4, 3));
+        expect_n_pieces(&mut app, 37);
+        // Move king
+        force_move_piece(&mut app, Defender, (5, 5), (5, 3));
+        force_move_piece(&mut app, Attacker, (6, 0), (6, 3));
+        skip_turn(&mut app, Defender);
+        expect_n_pieces(&mut app, 37);
+        force_move_piece(&mut app, Attacker, (10, 4), (5, 4));
+
+        expect_n_pieces(&mut app, 36);
+    }
+
+    #[test]
+    fn kill_against_corner() {
+        /*
+        A piece can be killed against a corner piece. */
+
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+        force_move_piece(&mut app, Attacker, (10, 3), (10, 1));
+        force_move_piece(&mut app, Defender, (5, 3), (10, 3));
+        skip_turn(&mut app, Attacker);
+        expect_n_pieces(&mut app, 37);
+        force_move_piece(&mut app, Defender, (10, 3), (10, 2));
+        expect_n_pieces(&mut app, 36);
+    }
 }
