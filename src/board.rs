@@ -408,7 +408,7 @@ pub mod test_helpers {
             }
             app.update();
         }
-        app.update();
+        // app.update(); remove in 2023
 
         // Select the destination square
         let square_entity_new = app
@@ -435,7 +435,7 @@ pub mod test_helpers {
             }
             app.update();
         }
-        app.update();
+        // app.update(); remove in 2023
     }
 
     pub fn skip_turn(app: &mut App, player: Player) {
