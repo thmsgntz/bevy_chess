@@ -454,4 +454,29 @@ pub mod test_helpers {
             MiniMap::from_app(app)
         );
     }
+
+    pub fn expect_game_over(app: &mut App, player: Player) {
+        let events = app.world.get_resource_mut::<Events<AppExit>>().unwrap();
+        let mut reader = events.get_reader();
+        let app_exit_events_received = reader.iter(&events).len();
+
+        assert_eq!(
+            app_exit_events_received,
+            1,
+            "\nGame not over, no AppExit yet!\n{:?}",
+            MiniMap::from_app(app)
+        );
+        drop(events);
+
+        let player_turn = app.world.get_resource_mut::<PlayerTurn>().unwrap();
+        let active_player = player_turn.0;
+
+        // Check if the player was the one we expected
+        assert_eq!(
+            active_player,
+            player,
+            "\nError while assuming game over, incorrect player!\n{:?}",
+            MiniMap::from_app(app)
+        );
+    }
 }
