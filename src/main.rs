@@ -586,4 +586,31 @@ mod tests {
         force_move_piece(&mut app, Defender, (10, 3), (10, 2));
         expect_n_pieces(&mut app, 36);
     }
+
+    #[test]
+    fn king_wins_when_reaching_a_corner() {
+        let mut app = App::new();
+
+        app.add_plugin(BoardPlugin).add_plugin(PiecesPlugin);
+
+        app.update();
+
+        expect_n_pieces(&mut app, 37);
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 3), (1, 3));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 4), (5, 2));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 5), (5, 3));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (5, 3), (9, 3));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (9, 3), (9, 0));
+        skip_turn(&mut app, Attacker);
+        force_move_piece(&mut app, Defender, (9, 0), (10, 0));
+
+        expect_game_over(&mut app, Defender);
+
+        expect_n_pieces(&mut app, 36);
+    }
 }
