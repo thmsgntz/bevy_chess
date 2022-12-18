@@ -91,7 +91,7 @@ fn is_path_empty(begin: (i8, i8), end: (i8, i8), pieces: &Vec<Piece>) -> bool {
     true
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct Moving(pub bool);
 
 pub fn is_moving(moving: Res<Moving>) -> ShouldRun {
@@ -261,7 +261,7 @@ fn spawn_king(
 ) {
     let mut bindings = commands
         // Spawn parent entity
-        .spawn_bundle(PbrBundle {
+        .spawn(PbrBundle {
             transform: Transform::from_translation(Vec3::new(
                 position.0 as f32,
                 0.,
@@ -278,22 +278,22 @@ fn spawn_king(
     if !cfg!(test) {
         // Add children to the parent
         bindings.with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
+            parent.spawn(PbrBundle {
                 mesh: mesh.unwrap(),
                 material: material.as_ref().unwrap().clone(),
                 transform: {
                     let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., -1.9));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
+                    transform.scale *= Vec3::new(0.2, 0.2, 0.2);
                     transform
                 },
                 ..Default::default()
             });
-            parent.spawn_bundle(PbrBundle {
+            parent.spawn(PbrBundle {
                 mesh: mesh_cross.unwrap(),
                 material: material.unwrap(),
                 transform: {
                     let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., -1.9));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
+                    transform.scale *= Vec3::new(0.2, 0.2, 0.2);
                     transform
                 },
                 ..Default::default()
@@ -329,7 +329,7 @@ fn spawn_pawn(
 ) {
     let mut binding = commands
         // Spawn parent entity
-        .spawn_bundle(PbrBundle {
+        .spawn(PbrBundle {
             transform: Transform::from_translation(Vec3::new(
                 position.0 as f32,
                 0.,
@@ -346,12 +346,12 @@ fn spawn_pawn(
     });
     if !cfg!(test) {
         binding.with_children(|parent| {
-            parent.spawn_bundle(PbrBundle {
+            parent.spawn(PbrBundle {
                 mesh: mesh.unwrap(),
                 material: material.unwrap(),
                 transform: {
                     let mut transform = Transform::from_translation(Vec3::new(-0.2, 0., 2.6));
-                    transform.apply_non_uniform_scale(Vec3::new(0.2, 0.2, 0.2));
+                    transform.scale *= Vec3::new(0.2, 0.2, 0.2);
                     transform
                 },
                 ..Default::default()

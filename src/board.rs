@@ -30,7 +30,7 @@ fn create_board(
 
             if cfg!(test) {
                 commands
-                    .spawn_bundle(PickableBundle {
+                    .spawn(PickableBundle {
                         ..Default::default()
                     })
                     .insert(square);
@@ -44,14 +44,14 @@ fn create_board(
                 };
 
                 commands
-                    .spawn_bundle(PbrBundle {
+                    .spawn(PbrBundle {
                         mesh: mesh.as_ref().unwrap().clone(),
                         // Change material according to position to get alternating pattern
                         material,
                         transform: Transform::from_translation(Vec3::new(i as f32, 0., j as f32)),
                         ..Default::default()
                     })
-                    .insert_bundle(PickableBundle {
+                    .insert(PickableBundle {
                         ..Default::default()
                     })
                     .insert(Square { x: i, y: j });
@@ -69,14 +69,15 @@ fn color_squares(
     // Get entity under the cursor, if there is one
     let top_entity = match picking_camera_query.iter().last() {
         Some(picking_camera) => picking_camera
-            .intersect_top()
+            .intersections()
+            .last()
             .map(|(entity, _intersection)| entity),
         None => None,
     };
 
     for (entity, square, mut material) in query.iter_mut() {
         // Change the material
-        *material = if Some(entity) == top_entity {
+        *material = if Some(entity) == top_entity.copied() {
             materials.highlight_color.clone()
         } else if Some(entity) == selected_square.entity {
             materials.selected_color.clone()
@@ -90,6 +91,7 @@ fn color_squares(
     }
 }
 
+#[derive(Resource)]
 struct SquareMaterials {
     highlight_color: Handle<StandardMaterial>,
     selected_color: Handle<StandardMaterial>,
@@ -114,16 +116,16 @@ impl FromWorld for SquareMaterials {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct SelectedSquare {
     entity: Option<Entity>,
 }
-#[derive(Default)]
+#[derive(Default, Resource)]
 struct SelectedPiece {
     entity: Option<Entity>,
 }
 
-#[derive(Component)]
+#[derive(Resource)]
 pub struct PlayerTurn(pub Player);
 impl Default for PlayerTurn {
     fn default() -> Self {
@@ -153,10 +155,10 @@ fn select_square(
 
     // Get the square under the cursor and set it as the selected
     if let Some(picking_camera) = picking_camera_query.iter().last() {
-        if let Some((square_entity, _intersection)) = picking_camera.intersect_top() {
-            if let Ok(_square) = squares_query.get(square_entity) {
+        if let Some((square_entity, _intersection)) = picking_camera.intersections().iter().last() {
+            if let Ok(_square) = squares_query.get(*square_entity) {
                 // Mark it as selected
-                selected_square.entity = Some(square_entity);
+                selected_square.entity = Some(*square_entity);
             }
         } else {
             // Player clicked outside the board, deselect everything
@@ -202,7 +204,7 @@ fn select_piece(
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Resource)]
 pub struct LastDestination {
     pub x: i8,
     pub y: i8,

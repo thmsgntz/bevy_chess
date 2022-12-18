@@ -12,7 +12,7 @@ fn init_next_move_text(mut commands: Commands, asset_server: ResMut<AssetServer>
 
     commands
         // root node
-        .spawn_bundle(
+        .spawn(
             TextBundle::from_section(
                 "Next move: Attacker",
                 TextStyle {
