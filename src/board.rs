@@ -14,6 +14,7 @@ impl Square {
     }
 }
 
+pub const CORNERS: [(i8, i8); 4] = [(0, 0), (10, 10), (10, 0), (0, 10)];
 pub const CORNERS_AND_CENTER: [(i8, i8); 5] = [(0, 0), (10, 10), (10, 0), (0, 10), (5, 5)];
 
 fn create_board(
@@ -297,12 +298,35 @@ fn check_killing(
     }
 }
 
+#[derive(Resource, Default)]
+struct GameOver(Option<Player>);
+
+fn check_victory(
+    query: Query<(Entity, &Piece), Without<Taken>>,
+    mut app_exit_events: EventWriter<AppExit>,
+    mut gameover: ResMut<GameOver>,
+    moving: Res<Moving>,
+) {
+    if gameover.0.is_some() || moving.0 {
+        return;
+    }
+    for (_entity, piece) in query.iter() {
+        if piece.is_king && CORNERS.contains(&(piece.x, piece.y)) {
+            println!("Defender win!");
+            app_exit_events.send(AppExit);
+            gameover.0 = Some(Player::Defender);
+            break;
+        }
+    }
+}
+
 #[derive(Component)]
 pub struct Taken;
 
 fn despawn_taken_pieces(
     mut commands: Commands,
     mut app_exit_events: EventWriter<AppExit>,
+    mut gameover: ResMut<GameOver>,
     moving: Res<Moving>,
     query: Query<(Entity, &Piece), With<Taken>>,
 ) {
@@ -313,6 +337,7 @@ fn despawn_taken_pieces(
         // If the king is taken, we should exit
         if piece.is_king {
             println!("Attackers win!");
+            gameover.0 = Some(Player::Attacker);
             app_exit_events.send(AppExit);
         }
 
@@ -328,6 +353,7 @@ impl Plugin for BoardPlugin {
             .init_resource::<SelectedPiece>()
             .init_resource::<PlayerTurn>()
             .init_resource::<LastDestination>()
+            .init_resource::<GameOver>()
             .add_event::<ResetSelectedEvent>()
             .add_startup_system(create_board);
         if !cfg!(test) {
@@ -350,7 +376,8 @@ impl Plugin for BoardPlugin {
                 .before(despawn_taken_pieces),
         )
         .add_system(despawn_taken_pieces)
-        .add_system(reset_selected.after("select_square"));
+        .add_system(reset_selected.after("select_square"))
+        .add_system(check_victory);
     }
 }
 
@@ -437,7 +464,7 @@ pub mod test_helpers {
             }
             app.update();
         }
-        // app.update(); remove in 2023
+        app.update();
     }
 
     pub fn skip_turn(app: &mut App, player: Player) {
@@ -458,24 +485,20 @@ pub mod test_helpers {
     }
 
     pub fn expect_game_over(app: &mut App, player: Player) {
-        let events = app.world.get_resource_mut::<Events<AppExit>>().unwrap();
-        let mut reader = events.get_reader();
-        let app_exit_events_received = reader.iter(&events).len();
+        let gameover = app.world.get_resource::<GameOver>().unwrap();
 
-        assert_eq!(
-            app_exit_events_received,
-            1,
-            "\nGame not over, no AppExit yet!\n{:?}",
+        assert!(
+            gameover.0.is_some(),
+            "\nGame not over yet!\n{:?}",
             MiniMap::from_app(app)
         );
-        drop(events);
 
-        let player_turn = app.world.get_resource_mut::<PlayerTurn>().unwrap();
-        let active_player = player_turn.0;
+        let winning_player = gameover.0.unwrap();
+        drop(gameover);
 
         // Check if the player was the one we expected
         assert_eq!(
-            active_player,
+            winning_player,
             player,
             "\nError while assuming game over, incorrect player!\n{:?}",
             MiniMap::from_app(app)

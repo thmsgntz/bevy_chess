@@ -611,7 +611,5 @@ mod tests {
         force_move_piece(&mut app, Defender, (9, 0), (10, 0));
 
         expect_game_over(&mut app, Defender);
-
-        expect_n_pieces(&mut app, 36);
     }
 }
